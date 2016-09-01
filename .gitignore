@@ -31,3 +31,11 @@
 # Debug files
 *.dSYM/
 *.su
+
+# CMake
+CMakeLists.txt.user*
+
+# Tempfiles
+*.*~
+*.swp
+
