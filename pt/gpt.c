@@ -22,3 +22,31 @@
  * SOFTWARE.
  ********************************************************************************/
 
+int gpt_init()
+{
+
+    return 0;
+}
+
+int gpt_deInit()
+{
+
+    return 0;
+}
+
+int gpt_validate()
+{
+
+    return 0;
+}
+
+int gpt_invalidate()
+{
+
+    return 0;
+}
+
+void gpt_dump()
+{
+
+}

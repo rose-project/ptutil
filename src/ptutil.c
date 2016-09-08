@@ -31,7 +31,38 @@
 
 int main(int argc, char* argv[])
 {
+    /* FIXME just a primitive first test app... */
+
+    (void)argc;
+    (void)argv;
+
+    if(-1 == gpt_init())
+    {
+        fprintf(stderr, "Init failed\n");
+        return EXIT_FAILURE;
+    }
+
+    if(-1 == gpt_validate())
+    {
+        fprintf(stderr, "Primary gpt invalid\n");
+    }
+
+    printf("Dump primary gpt\n");
+    gpt_dump();
+
+    if(-1 == gpt_validate())
+    {
+        fprintf(stderr, "Recovery gpt invalid\n");
+    }
+
+    printf("Dump Recovery gpt\n");
+    gpt_dump();
+
+    if(-1 == gpt_deInit())
+    {
+        fprintf(stderr, "DeInit failed\n");
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
-

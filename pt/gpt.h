@@ -111,7 +111,6 @@ int gpt_invalidate();
 
 /**
  * @brief gpt_dump
- * @return -1 on error
  */
-int gpt_dump();
+void gpt_dump();
 

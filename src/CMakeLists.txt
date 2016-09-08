@@ -31,4 +31,4 @@ set(PTUTIL_SRC ptutil)
 
 add_executable(ptutil ${PTUTIL_SRC})
 
-link_libraries(ptutil pt)
+target_link_libraries(ptutil pt)
