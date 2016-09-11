@@ -36,7 +36,9 @@ int main(int argc, char* argv[])
     (void)argc;
     (void)argv;
 
-    if(-1 == gpt_init())
+    struct gpt_device device;
+
+    if(-1 == gpt_init(&device))
     {
         fprintf(stderr, "Init failed\n");
         return EXIT_FAILURE;
@@ -58,7 +60,7 @@ int main(int argc, char* argv[])
     printf("Dump Recovery gpt\n");
     gpt_dump();
 
-    if(-1 == gpt_deInit())
+    if(-1 == gpt_deInit(&device))
     {
         fprintf(stderr, "DeInit failed\n");
         return EXIT_FAILURE;
