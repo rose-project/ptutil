@@ -28,9 +28,11 @@ typedef struct gpt_header gpt_header;
 
 struct gpt_device
 {
+    const char *path;
+    int         fd;
+
     gpt_header *primary;
     gpt_header *backup;
-
 };
 
 
@@ -38,7 +40,7 @@ struct gpt_device
  * @brief gpt_init
  * @return -1 on error
  */
-int gpt_init(struct gpt_device *device);
+int gpt_init(struct gpt_device *device, char* device_path);
 
 /**
  * @brief gpt_deInit

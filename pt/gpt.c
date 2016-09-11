@@ -24,7 +24,17 @@
 
 #include <pt/gpt.h>
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+
 
 /*
  * GPT specification could be found here:
@@ -60,7 +70,7 @@ struct gpt_header
     uint32_t reserved;          /* must be zero */
 
     uint64_t my_lba;			/* lba location of this header */
-    uint64_t alternate_lba;		/* lba position of recovery header */
+    uint64_t alternate_lba;		/* lba position of backup header */
     uint64_t first_usable_lba;	/* first usable LBA for partitions */
     uint64_t last_usable_lba;	/* last usable LBA for partitions */
 
@@ -87,16 +97,49 @@ struct gpt_entry {
 } __attribute__ ((packed));
 
 
-int gpt_init(struct gpt_device *device)
+int gpt_init(struct gpt_device *device, char *device_path)
 {
-//    device->primary = malloc(sizeof(struct gpt_header));
+    device->fd = -1;
+    device->primary = (struct gpt_header*) malloc(sizeof(struct gpt_header));
+    device->backup  = (struct gpt_header*) malloc(sizeof(struct gpt_header));
+    if( !device->primary || !device->backup)
+    {
+        goto gpt_malloc_failed;
+    }
+
+    device->path = strdup( device_path );
+    if(!device->path)
+        goto device_failed;
+
+    device->fd = open( device_path, O_EXCL | O_SYNC | O_RDWR );
+    if(-1 == device->fd)
+        goto device_failed;
+
+    /* Init primary / backup structure */
 
     return 0;
+
+device_failed:
+    free(device->primary);
+    free(device->backup);
+    device->primary = NULL;
+    device->backup  = NULL;
+    fprintf(stderr, "Error (%d): %s", errno, strerror(errno));
+gpt_malloc_failed:
+    return -1;
 }
 
 int gpt_deInit(struct gpt_device *device)
 {
-
+    if( -1 != device->fd )
+        close( device->fd );
+    free( (char*)device->path );
+    free( device->primary );
+    free( device->backup );
+    device->fd = 0;
+    device->path = NULL;
+    device->primary = NULL;
+    device->backup  = NULL;
     return 0;
 }
 

@@ -33,12 +33,16 @@ int main(int argc, char* argv[])
 {
     /* FIXME just a primitive first test app... */
 
-    (void)argc;
-    (void)argv;
+    char* path = NULL;
 
     struct gpt_device device;
 
-    if(-1 == gpt_init(&device))
+    if(argc < 1)
+        return EXIT_FAILURE;
+
+    path = argv[1];
+
+    if( -1 == gpt_init(&device, path) )
     {
         fprintf(stderr, "Init failed\n");
         return EXIT_FAILURE;
