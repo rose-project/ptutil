@@ -22,7 +22,20 @@
 
 cmake_minimum_required(VERSION 2.8)
 
+if(NOT MODULE_PATH)
+    set(MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+endif()
+
+set(CMAKE_MODULE_PATH ${MODULE_PATH})
+
+if("${CMAKE_TOOLCHAIN_FILE}" STREQUAL "")
+    set(CMAKE_TOOLCHAIN_FILE "${MODULE_PATH}/gcc-x64.toolchain")
+endif()
+Message(STATUS "Using Toolchainfile: ${CMAKE_TOOLCHAIN_FILE}")
+
 project(PTUtilty)
+
+Message(STATUS "Using C Flags: ${CMAKE_C_FLAGS}")
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib/)
