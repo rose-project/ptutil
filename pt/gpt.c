@@ -2,6 +2,7 @@
  * MIT License
  *
  * Copyright (c) 2016 rose-project
+ * Copyright (c) 2016 Christian Fries
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +35,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "pt/helpers.h"
+
+
+static const uint64_t GPT_SIGNATURE = 0x5452415020494645;
 
 
 /*
@@ -61,6 +66,9 @@ typedef struct {
 } gpt_entry_attributes;
 
 
+/**
+ * @brief This gpt_header struct has a lenght of 92 bytes
+ */
 struct gpt_header
 {
     uint64_t signature;	        /* constant 0x5452415020494645 btw. "EFI PART" */
@@ -84,7 +92,9 @@ struct gpt_header
     // reserved2 : 0;
 } __attribute__ ((packed));
 
-
+/**
+ * @brief The gpt_entry struct has a length of 128 Bytes per partition entry
+ */
 struct gpt_entry {
     efi_guid_t	partition_type_guid;   /* Unique ID defines the purpose and type, zero value marks entry as unused */
     efi_guid_t	unique_partition_guid; /* partition GUID */
@@ -99,6 +109,9 @@ struct gpt_entry {
 
 int gpt_init(struct gpt_device *device, char *device_path)
 {
+    ASSERT(device);
+    ASSERT(device_path);
+    ssize_t ret = -1;
     device->fd = -1;
     device->primary = (struct gpt_header*) malloc(sizeof(struct gpt_header));
     device->backup  = (struct gpt_header*) malloc(sizeof(struct gpt_header));
@@ -111,11 +124,15 @@ int gpt_init(struct gpt_device *device, char *device_path)
     if(!device->path)
         goto device_failed;
 
+    logDbg("Open %s...", device_path);
     device->fd = open( device_path, O_EXCL | O_SYNC | O_RDWR );
     if(-1 == device->fd)
         goto device_failed;
 
     /* Init primary / backup structure */
+    ret = read(device->fd, device->primary, sizeof(gpt_header));
+
+    logDbg("Read %zd", ret);
 
     return 0;
 
@@ -124,13 +141,14 @@ device_failed:
     free(device->backup);
     device->primary = NULL;
     device->backup  = NULL;
-    fprintf(stderr, "Error (%d): %s", errno, strerror(errno));
+    logErr("Error (%d): %s", errno, strerror(errno));
 gpt_malloc_failed:
     return -1;
 }
 
 int gpt_deInit(struct gpt_device *device)
 {
+    ASSERT(device);
     if( -1 != device->fd )
         close( device->fd );
     free( (char*)device->path );

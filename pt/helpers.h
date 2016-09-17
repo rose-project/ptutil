@@ -23,46 +23,39 @@
  * SOFTWARE.
  ********************************************************************************/
 
-#include <stdint.h>
+#ifndef HELPERS_H
+#define HELPERS_H
 
-typedef struct gpt_header gpt_header;
-
-struct gpt_device
-{
-    const char *path;
-    int         fd;
-
-    gpt_header *primary;
-    gpt_header *backup;
-};
-
-
-/**
- * @brief gpt_init
- * @return -1 on error
+/*
+ * Logging
  */
-int gpt_init(struct gpt_device *device, char* device_path);
 
-/**
- * @brief gpt_deInit
- * @return -1 on error
+#ifdef ENABLE_LOGGING
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#define _logging_macro(chan, format, ...) do { fprintf(chan,"%s (%d): " format "\n", __FILENAME__, __LINE__,  __VA_ARGS__); } while(0)
+#else
+#define _logging_macro(chan, format, ...)
+#endif // ENABLE_LOGGING
+
+#define logDbg(format, ...)	_logging_macro(stdout, format, ##__VA_ARGS__)
+#define logErr(format, ...)	_logging_macro(stderr, format, ##__VA_ARGS__)
+
+
+/*
+ * Assert Macro
  */
-int gpt_deInit(struct gpt_device *device);
+#ifdef ENABLE_ASSERTS
+#   define debugbreak() __builtin_trap()
+#   define reportAssertionFailure(...) printf("%s (%d): %s\n", __VA_ARGS__)
 
-/**
- * @brief gpt_validate
- * @return -1 on error
- */
-int gpt_validate();
+#   define ASSERT(expr) do { \
+        if(!(expr)) {    \
+            reportAssertionFailure(__FILE__, __LINE__, #expr); \
+            abort(); \
+        }} while(0)
+#else
+#   define ASSERT(expr)
+#endif // ENABLE_ASSERTS
 
-/**
- * @brief gpt_invalidate
- * @return -1 on error
- */
-int gpt_invalidate();
 
-/**
- * @brief gpt_dump
- */
-void gpt_dump();
-
+#endif // HELPERS_H

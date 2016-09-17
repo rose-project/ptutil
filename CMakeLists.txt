@@ -40,10 +40,20 @@ Message(STATUS "Using C Flags: ${CMAKE_C_FLAGS}")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib/)
 
+option(ENABLE_LOGGING On)
+option(ENABLE_ASSERTS On)
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
+
+if(ENABLE_LOGGING)
+    add_definitions( -DENABLE_LOGGING )
+endif()
+if(ENABLE_ASSERTS)
+    add_definitions( -DENABLE_ASSERTS )
+endif()
 
 add_subdirectory(pt)
 add_subdirectory(src)
