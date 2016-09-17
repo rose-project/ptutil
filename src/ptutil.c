@@ -43,31 +43,29 @@ int main(int argc, char* argv[])
 
     path = argv[1];
 
-    if( -1 == gpt_init(&device, path) )
+    if( gpt_init(&device, path) )
     {
         logErr("Init failed");
         return EXIT_FAILURE;
     }
 
-    if(-1 == gpt_validate(&device, GPT_PRIMARY, false))
+    if( gpt_validate(&device, GPT_PRIMARY, false) )
     {
         logErr("Primary gpt invalid");
     }
 
-#if 0
-    logDbg("Dump primary gpt");
+
     gpt_dump(&device, GPT_PRIMARY);
 
-    if(-1 == gpt_validate(&device, GPT_BACKUP))
+    if( gpt_validate(&device, GPT_BACKUP, false) )
     {
         logErr("Backup gpt invalid");
     }
 
-    logDbg("Dump backup gpt");
-    gpt_dump(&device, GPT_BACKUP);
-#endif
+//    gpt_dump(&device, GPT_BACKUP);
 
-    if(-1 == gpt_deInit(&device))
+
+    if( gpt_deInit(&device) )
     {
         logErr("DeInit failed");
         return EXIT_FAILURE;

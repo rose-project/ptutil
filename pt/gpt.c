@@ -190,12 +190,13 @@ int gpt_deInit(struct gpt_device *device)
 }
 
 
-int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair)
+int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair_crc)
 {
     ASSERT(device);
     gpt_header *header;
     gpt_header tmpheader;
     uint32_t crc = 0;
+    uint64_t signature;
 
     if(GPT_PRIMARY == type)
         header = device->primary;
@@ -208,22 +209,28 @@ int gpt_validate(const struct gpt_device *device, enum header_type type, bool re
     crc = calculate_crc32((unsigned char*)&tmpheader,sizeof(gpt_header));
 
     if( tmpheader.signature != GPT_SIGNATURE ||
-        crc == 0 || (crc != header->header_crc32 && !repair)
+        crc == 0 || (crc != header->header_crc32 && !repair_crc)
         )
     {
-        logDbg("Calculated CRC: %ud != %ud", crc, header->header_crc32 );
-        return -1;
+        logErr("Calculated CRC: %ud != %ud", crc, header->header_crc32 );
+        return -2;
     }
 
     // TODO check header->partition_entries_lba and header->partition_entry_array_crc32
 
-    if(GPT_PRIMARY == type)
+
+    if( -1 == lseek(device->fd, header->alternate_lba * LBA_SIZE, SEEK_SET))
+        return -1;
+    read(device->fd, &signature, sizeof(signature));
+    if(signature != GPT_SIGNATURE)
     {
-        // TODO primary pt checks if AlternateLBA points to backup table
+        logErr("AlternateLBA does not point to other gpt header");
+        return -3;
     }
 
-    if(repair)
+    if(repair_crc)
     {
+        header->header_crc32 = crc;
         // TODO write back valid crc32 checksum
     }
 
@@ -260,7 +267,7 @@ void gpt_dump(const struct gpt_device *device, enum header_type type)
     printf("Signature   : %s (0x%016lx)\n",
                header->signature == GPT_SIGNATURE ? "valid" : "invalid",
                header->signature);
-    printf("Revision    : %u\n", header->revision);
+    printf("Revision    : 0x%x\n", header->revision);
     printf("Header size : %u\n", header->header_size);
     printf("Header CRC32: 0x%08x\n", header->header_crc32);
     printf("Reserved    : 0x%08x\n", header->reserved);

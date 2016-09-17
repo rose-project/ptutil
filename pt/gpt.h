@@ -59,7 +59,7 @@ int gpt_deInit(struct gpt_device *device);
  * @brief gpt_validate
  * @return -1 on error
  */
-int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair);
+int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair_crc);
 
 /**
  * @brief gpt_invalidate
