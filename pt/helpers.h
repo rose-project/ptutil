@@ -35,13 +35,14 @@
 
 #ifdef ENABLE_LOGGING
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#define _logging_macro(chan, format, ...) do { fprintf(chan,"%s (%d): " format "\n", __FILENAME__, __LINE__,  ##__VA_ARGS__); } while(0)
+#define _logging_macro(chan, title, format, ...) do { fprintf(chan, title "%s (%d): " format "\n", __FILENAME__, __LINE__,  ##__VA_ARGS__); fflush(chan); } while(0)
 #else
 #define _logging_macro(chan, format, ...)
 #endif // ENABLE_LOGGING
 
-#define logDbg(format, ...)	_logging_macro(stdout, format, ##__VA_ARGS__)
-#define logErr(format, ...)	_logging_macro(stderr, format, ##__VA_ARGS__)
+#define logDbg(format, ...)  _logging_macro(stdout, "Debug ",   format, ##__VA_ARGS__)
+#define logWarn(format, ...) _logging_macro(stderr, "Warning ", format, ##__VA_ARGS__)
+#define logErr(format, ...)  _logging_macro(stderr, "Error ",   format, ##__VA_ARGS__)
 
 
 /*
