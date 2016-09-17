@@ -281,7 +281,7 @@ static int _gpt_read_header(const struct gpt_device *device, enum header_type ty
         return -1;
     }
 
-    if(ret < 92 || header->signature != GPT_SIGNATURE)
+    if(ret < (ssize_t) sizeof(gpt_header) || header->signature != GPT_SIGNATURE)
     {
         logErr("No valid signature found");
         return -1;
