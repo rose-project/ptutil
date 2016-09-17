@@ -37,7 +37,6 @@
 
 #include "pt/helpers.h"
 
-
 static const uint64_t GPT_SIGNATURE = 0x5452415020494645;
 
 
@@ -107,11 +106,14 @@ struct gpt_entry {
 } __attribute__ ((packed));
 
 
+static int gpt_read_header(const struct gpt_device *device, enum header_type type);
+
+
 int gpt_init(struct gpt_device *device, char *device_path)
 {
     ASSERT(device);
     ASSERT(device_path);
-    ssize_t ret = -1;
+
     device->fd = -1;
     device->primary = (struct gpt_header*) malloc(sizeof(struct gpt_header));
     device->backup  = (struct gpt_header*) malloc(sizeof(struct gpt_header));
@@ -130,9 +132,8 @@ int gpt_init(struct gpt_device *device, char *device_path)
         goto device_failed;
 
     /* Init primary / backup structure */
-    ret = read(device->fd, device->primary, sizeof(gpt_header));
-
-    logDbg("Read %zd", ret);
+    gpt_read_header(device, GPT_PRIMARY);
+    gpt_read_header(device, GPT_BACKUP);
 
     return 0;
 
@@ -173,7 +174,72 @@ int gpt_invalidate()
     return 0;
 }
 
-void gpt_dump()
+void gpt_dump(const struct gpt_device *device, enum header_type type)
 {
+    ASSERT(device);
+    gpt_header *header;
 
+    if(GPT_PRIMARY == type)
+        header = device->primary;
+    else
+        header = device->backup;
+
+    if(!header)
+    {
+        logErr("GPT header not initialized");
+        return;
+    }
+
+    printf("==================================================\n");
+    printf("Dump - %s - gpt header\n", GPT_PRIMARY == type ? "PRIMARY" : "BACKUP");
+    printf("--------------------------------------------------\n");
+    printf("GPT Header Informations\n");
+    printf("--------------------------------------------------\n");
+    printf("Signature   : %s (0x%016lx)\n",
+               header->signature == GPT_SIGNATURE ? "valid" : "invalid",
+               header->signature);
+    printf("Revision    : %u\n", header->revision);
+    printf("Header size : %u\n", header->header_size);
+    printf("Header CRC32: 0x%08x\n", header->header_crc32);
+    printf("Reserved    : 0x%08x\n", header->reserved);
+    printf("--------------------------------------------------\n");
+    printf("Partition informations\n");
+    printf("--------------------------------------------------\n");
+    printf("Current Header LBA    : 0x%016lx\n", header->my_lba);
+    printf("Alternative Header LBA: 0x%016lx\n", header->alternate_lba);
+    printf("First usable LBA      : 0x%016lx\n", header->first_usable_lba);
+    printf("Last usable LBA       : 0x%016lx\n", header->last_usable_lba);
+    printf("\n");
+    printf("Disk GUID             : fakefake-fake-fake-fake-fakefakefake\n"/*, header->disk_guid*/);	// TODO formater for UUID
+    printf("Start entry LBA       : 0x%016lx\n", header->partition_entries_lba);
+    printf("Partition entry count : %u\n", header->num_partition_entries);
+    printf("Partition entry size  : %d\n", header->sizeof_partition_entry);
+    printf("Partition entry CRC32 : 0x%08x\n", header->partition_entry_array_crc32);
+    printf("==================================================\n");
+}
+
+static int gpt_read_header(const struct gpt_device *device, enum header_type type)
+{
+    ASSERT(device);
+    ssize_t ret = -1;
+
+    if(GPT_PRIMARY == type)
+    {
+        if((off_t)-1 == lseek(device->fd, 512, SEEK_SET))
+        {
+            return -1;
+        }
+        ret = read(device->fd, device->primary, sizeof(gpt_header));
+    }
+    else if(GPT_BACKUP == type)
+    {
+//        lseek(device->fd, -512, SEEK_END);
+        ret = read(device->fd, device->backup, sizeof(gpt_header));
+    }
+    else
+        return -1;
+
+    logDbg("Read %zd", ret);
+
+    return 0;
 }

@@ -26,13 +26,16 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
+#include <stdint.h>
+#include <string.h>
+
 /*
  * Logging
  */
 
 #ifdef ENABLE_LOGGING
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#define _logging_macro(chan, format, ...) do { fprintf(chan,"%s (%d): " format "\n", __FILENAME__, __LINE__,  __VA_ARGS__); } while(0)
+#define _logging_macro(chan, format, ...) do { fprintf(chan,"%s (%d): " format "\n", __FILENAME__, __LINE__,  ##__VA_ARGS__); } while(0)
 #else
 #define _logging_macro(chan, format, ...)
 #endif // ENABLE_LOGGING

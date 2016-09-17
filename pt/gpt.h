@@ -25,6 +25,11 @@
 
 #include <stdint.h>
 
+enum header_type {
+    GPT_PRIMARY = 0,
+    GPT_BACKUP  = 1,
+};
+
 typedef struct gpt_header gpt_header;
 
 struct gpt_device
@@ -64,5 +69,5 @@ int gpt_invalidate();
 /**
  * @brief gpt_dump
  */
-void gpt_dump();
+void gpt_dump(const struct gpt_device *device, enum header_type type);
 

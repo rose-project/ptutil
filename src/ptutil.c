@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "pt/gpt.h"
+#include "pt/helpers.h"
 
 int main(int argc, char* argv[])
 {
@@ -45,29 +46,29 @@ int main(int argc, char* argv[])
 
     if( -1 == gpt_init(&device, path) )
     {
-        fprintf(stderr, "Init failed\n");
+        logErr("Init failed");
         return EXIT_FAILURE;
     }
 
     if(-1 == gpt_validate())
     {
-        fprintf(stderr, "Primary gpt invalid\n");
+        logErr("Primary gpt invalid");
     }
 
-    printf("Dump primary gpt\n");
-    gpt_dump();
+    logDbg("Dump primary gpt");
+    gpt_dump(&device, GPT_PRIMARY);
 
     if(-1 == gpt_validate())
     {
-        fprintf(stderr, "Recovery gpt invalid\n");
+        logErr("Backup gpt invalid");
     }
 
-    printf("Dump Recovery gpt\n");
-    gpt_dump();
+    logDbg("Dump backup gpt");
+    gpt_dump(&device, GPT_BACKUP);
 
     if(-1 == gpt_deInit(&device))
     {
-        fprintf(stderr, "DeInit failed\n");
+        logErr("DeInit failed");
         return EXIT_FAILURE;
     }
 
