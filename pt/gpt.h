@@ -58,13 +58,13 @@ int gpt_deInit(struct gpt_device *device);
  * @brief gpt_validate
  * @return -1 on error
  */
-int gpt_validate();
+int gpt_validate(const struct gpt_device *device, enum header_type type);
 
 /**
  * @brief gpt_invalidate
  * @return -1 on error
  */
-int gpt_invalidate();
+int gpt_invalidate(const struct gpt_device *device, enum header_type type);
 
 /**
  * @brief gpt_dump

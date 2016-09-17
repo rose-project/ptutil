@@ -34,7 +34,6 @@
 int main(int argc, char* argv[])
 {
     /* FIXME just a primitive first test app... */
-
     char* path = NULL;
 
     struct gpt_device device;
@@ -50,21 +49,23 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    if(-1 == gpt_validate())
+    if(-1 == gpt_validate(&device, GPT_PRIMARY))
     {
         logErr("Primary gpt invalid");
     }
 
+#if 0
     logDbg("Dump primary gpt");
     gpt_dump(&device, GPT_PRIMARY);
 
-    if(-1 == gpt_validate())
+    if(-1 == gpt_validate(&device, GPT_BACKUP))
     {
         logErr("Backup gpt invalid");
     }
 
     logDbg("Dump backup gpt");
     gpt_dump(&device, GPT_BACKUP);
+#endif
 
     if(-1 == gpt_deInit(&device))
     {

@@ -37,8 +37,9 @@
 
 #include "pt/helpers.h"
 
-static const uint64_t GPT_SIGNATURE = 0x5452415020494645;
+static const uint64_t GPT_SIGNATURE = 0x5452415020494645ULL;
 
+#define LBA_SIZE 512LL
 
 /*
  * GPT specification could be found here:
@@ -106,43 +107,68 @@ struct gpt_entry {
 } __attribute__ ((packed));
 
 
-static int gpt_read_header(const struct gpt_device *device, enum header_type type);
+static int _gpt_read_header(const struct gpt_device *device, enum header_type type);
 
 
 int gpt_init(struct gpt_device *device, char *device_path)
 {
     ASSERT(device);
     ASSERT(device_path);
+    int cnt = 0;
 
     device->fd = -1;
     device->primary = (struct gpt_header*) malloc(sizeof(struct gpt_header));
     device->backup  = (struct gpt_header*) malloc(sizeof(struct gpt_header));
     if( !device->primary || !device->backup)
     {
+        logErr("Not enough memory");
         goto gpt_malloc_failed;
     }
 
     device->path = strdup( device_path );
     if(!device->path)
+    {
+        logErr("(%d) - %s", errno, strerror(errno));
         goto device_failed;
+    }
 
     logDbg("Open %s...", device_path);
     device->fd = open( device_path, O_EXCL | O_SYNC | O_RDWR );
     if(-1 == device->fd)
+    {
+        logErr("(%d) - %s", errno, strerror(errno));
         goto device_failed;
+    }
 
     /* Init primary / backup structure */
-    gpt_read_header(device, GPT_PRIMARY);
-    gpt_read_header(device, GPT_BACKUP);
+    if(-1 == _gpt_read_header(device, GPT_PRIMARY))
+    {
+        logWarn("Primary GPT header is invalid");
+        cnt++;
+    }
+    if(-1 == _gpt_read_header(device, GPT_BACKUP))
+    {
+        logWarn("Backup GPT header is invalid");
+        cnt++;
+    }
+
+    if(cnt > 1)
+    {
+        logErr("No gpt headers found!");
+        goto device_failed;
+    }
 
     return 0;
 
 device_failed:
+    if(device->fd >= 0)
+        close(device->fd);
+    free((char*)device->path);
     free(device->primary);
     free(device->backup);
     device->primary = NULL;
     device->backup  = NULL;
-    logErr("Error (%d): %s", errno, strerror(errno));
+    device->fd = -1;
 gpt_malloc_failed:
     return -1;
 }
@@ -162,15 +188,15 @@ int gpt_deInit(struct gpt_device *device)
     return 0;
 }
 
-int gpt_validate()
+int gpt_validate(const struct gpt_device *device, enum header_type type)
 {
-
+    ASSERT(device);
     return 0;
 }
 
-int gpt_invalidate()
+int gpt_invalidate(const struct gpt_device *device, enum header_type type)
 {
-
+    ASSERT(device);
     return 0;
 }
 
@@ -218,28 +244,48 @@ void gpt_dump(const struct gpt_device *device, enum header_type type)
     printf("==================================================\n");
 }
 
-static int gpt_read_header(const struct gpt_device *device, enum header_type type)
+static int _gpt_read_header(const struct gpt_device *device, enum header_type type)
 {
     ASSERT(device);
     ssize_t ret = -1;
+    gpt_header* header = NULL;
 
     if(GPT_PRIMARY == type)
     {
-        if((off_t)-1 == lseek(device->fd, 512, SEEK_SET))
-        {
+        header = device->primary;
+        if( -1 == lseek(device->fd, 1 * LBA_SIZE, SEEK_SET))
             return -1;
-        }
-        ret = read(device->fd, device->primary, sizeof(gpt_header));
+        ret = read(device->fd, header, sizeof(gpt_header));
     }
     else if(GPT_BACKUP == type)
     {
-//        lseek(device->fd, -512, SEEK_END);
-        ret = read(device->fd, device->backup, sizeof(gpt_header));
+        header = device->backup;
+        if(device->primary->signature == GPT_SIGNATURE)
+        {
+            if( -1 == lseek(device->fd, device->primary->alternate_lba * LBA_SIZE, SEEK_SET))
+                return -1;
+            ret = read(device->fd, header, sizeof(gpt_header));
+        }
+        /* T*/
+        if(header->signature != GPT_SIGNATURE)
+        {
+            logWarn("No valid backup header at alternate LBA found!");
+            if( -1 == lseek(device->fd, -1 * LBA_SIZE, SEEK_END))
+                return -1;
+            ret = read(device->fd, header, sizeof(gpt_header));
+        }
     }
     else
+    {
+        logErr("Unknown HeaderType");
         return -1;
+    }
 
-    logDbg("Read %zd", ret);
+    if(ret < 92 || header->signature != GPT_SIGNATURE)
+    {
+        logErr("No valid signature found");
+        return -1;
+    }
 
     return 0;
 }
