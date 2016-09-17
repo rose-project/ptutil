@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    if(-1 == gpt_validate(&device, GPT_PRIMARY))
+    if(-1 == gpt_validate(&device, GPT_PRIMARY, false))
     {
         logErr("Primary gpt invalid");
     }

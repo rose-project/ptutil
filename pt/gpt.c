@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 
 #include "pt/helpers.h"
+#include "pt/crc32.h"
 
 static const uint64_t GPT_SIGNATURE = 0x5452415020494645ULL;
 
@@ -188,9 +189,44 @@ int gpt_deInit(struct gpt_device *device)
     return 0;
 }
 
-int gpt_validate(const struct gpt_device *device, enum header_type type)
+
+int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair)
 {
     ASSERT(device);
+    gpt_header *header;
+    gpt_header tmpheader;
+    uint32_t crc = 0;
+
+    if(GPT_PRIMARY == type)
+        header = device->primary;
+    else
+        header = device->backup;
+
+    memcpy(&tmpheader, header, sizeof(gpt_header));
+    memset(&tmpheader.header_crc32, 0x0, sizeof(tmpheader.header_crc32));
+
+    crc = calculate_crc32((unsigned char*)&tmpheader,sizeof(gpt_header));
+
+    if( tmpheader.signature != GPT_SIGNATURE ||
+        crc == 0 || (crc != header->header_crc32 && !repair)
+        )
+    {
+        logDbg("Calculated CRC: %ud != %ud", crc, header->header_crc32 );
+        return -1;
+    }
+
+    // TODO check header->partition_entries_lba and header->partition_entry_array_crc32
+
+    if(GPT_PRIMARY == type)
+    {
+        // TODO primary pt checks if AlternateLBA points to backup table
+    }
+
+    if(repair)
+    {
+        // TODO write back valid crc32 checksum
+    }
+
     return 0;
 }
 

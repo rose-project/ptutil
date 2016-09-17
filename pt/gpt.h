@@ -24,6 +24,7 @@
  ********************************************************************************/
 
 #include <stdint.h>
+#include <stdbool.h>
 
 enum header_type {
     GPT_PRIMARY = 0,
@@ -58,7 +59,7 @@ int gpt_deInit(struct gpt_device *device);
  * @brief gpt_validate
  * @return -1 on error
  */
-int gpt_validate(const struct gpt_device *device, enum header_type type);
+int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair);
 
 /**
  * @brief gpt_invalidate

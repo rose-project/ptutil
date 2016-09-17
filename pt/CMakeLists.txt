@@ -24,6 +24,7 @@ cmake_minimum_required(VERSION 2.8)
 
 set(GPT_LIBRARY_SRC gpt
         helpers
+        crc32
         )
 
 
