@@ -228,10 +228,16 @@ int gpt_validate(const struct gpt_device *device, enum header_type type, bool re
         return -3;
     }
 
-    if(repair_crc)
+    if(crc != header->header_crc32 && repair_crc)
     {
-        header->header_crc32 = crc;
-        // TODO write back valid crc32 checksum
+        if( -1 == lseek(device->fd, header->my_lba * LBA_SIZE + 16, SEEK_SET))
+            return -1;
+        if( -1 == write(device->fd, &crc, sizeof(crc)))
+        {
+            return -1;
+        }
+        logDbg("GPT Header repaired");
+        fsync(device->fd);
     }
 
     return 0;
@@ -240,6 +246,35 @@ int gpt_validate(const struct gpt_device *device, enum header_type type, bool re
 int gpt_invalidate(const struct gpt_device *device, enum header_type type)
 {
     ASSERT(device);
+    gpt_header *header;
+    uint32_t invalid_crc = 0x00000000;
+
+    /* other gpt header must be valid, else invalidate would possible brick system */
+    if(GPT_PRIMARY == type)
+    {
+        header = device->primary;
+        if( gpt_validate(device,GPT_BACKUP,false))
+        {
+            return -1;
+        }
+    }
+    else
+    {
+        header = device->backup;
+        if(gpt_validate(device,GPT_PRIMARY,false))
+        {
+            return -1;
+        }
+    }
+
+    if( -1 == lseek(device->fd, header->my_lba * LBA_SIZE + 16, SEEK_SET))
+        return -1;
+    if( -1 == write(device->fd, &invalid_crc, sizeof(uint32_t)))
+    {
+        return -1;
+    }
+
+    fsync(device->fd);	// TODO check return
     return 0;
 }
 
