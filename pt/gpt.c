@@ -111,7 +111,7 @@ struct gpt_entry {
 static int _gpt_read_header(const struct gpt_device *device, enum header_type type);
 
 
-int gpt_init(struct gpt_device *device, char *device_path)
+extern int gpt_init(struct gpt_device *device, char *device_path)
 {
     ASSERT(device);
     ASSERT(device_path);
@@ -174,7 +174,7 @@ gpt_malloc_failed:
     return -1;
 }
 
-int gpt_deInit(struct gpt_device *device)
+extern int gpt_deInit(struct gpt_device *device)
 {
     ASSERT(device);
     if( -1 != device->fd )
@@ -190,9 +190,10 @@ int gpt_deInit(struct gpt_device *device)
 }
 
 
-int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair_crc)
+extern int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair_crc)
 {
     ASSERT(device);
+    int err = -1;
     gpt_header *header;
     gpt_header tmpheader;
     uint32_t crc = 0;
@@ -221,9 +222,8 @@ int gpt_validate(const struct gpt_device *device, enum header_type type, bool re
     /* Check partition entries */
     entry_buffer = (unsigned char*) malloc(header->num_partition_entries * header->sizeof_partition_entry);
     if( -1 == lseek(device->fd, header->partition_entries_lba * LBA_SIZE, SEEK_SET))
-        return -1;
-    read(device->fd,
-         entry_buffer,
+        goto io_error;
+    read(device->fd, entry_buffer,
          header->num_partition_entries * header->sizeof_partition_entry);
     crc = calculate_crc32( entry_buffer,
                            header->num_partition_entries * header->sizeof_partition_entry
@@ -231,34 +231,43 @@ int gpt_validate(const struct gpt_device *device, enum header_type type, bool re
     if(crc != header->partition_entry_array_crc32)
     {
         logErr("Calculated CRC: %ud != %ud", crc, header->partition_entry_array_crc32 );
-        return -2;
+        goto partition_entries_invalid;
     }
 
     if( -1 == lseek(device->fd, header->alternate_lba * LBA_SIZE, SEEK_SET))
-        return -1;
+        goto io_error;
     read(device->fd, &signature, sizeof(signature));
     if(signature != GPT_SIGNATURE)
     {
         logErr("AlternateLBA does not point to other gpt header");
-        return -3;
+        goto partition_entries_invalid;
     }
 
     if(crc != header->header_crc32 && repair_crc)
     {
         if( -1 == lseek(device->fd, header->my_lba * LBA_SIZE + 16, SEEK_SET))
-            return -1;
+            goto io_error;
         if( -1 == write(device->fd, &crc, sizeof(crc)))
         {
-            return -1;
+            goto io_error;
         }
         logDbg("GPT Header repaired");
         fsync(device->fd);
     }
 
     return 0;
+
+io_error:
+    logErr("Error %i: %s", errno, strerror(errno));
+partition_entries_invalid:
+    if(entry_buffer)
+        free(entry_buffer);
+    entry_buffer = NULL;
+
+    return err;
 }
 
-int gpt_invalidate(const struct gpt_device *device, enum header_type type)
+extern int gpt_invalidate(const struct gpt_device *device, enum header_type type)
 {
     ASSERT(device);
     gpt_header *header;
@@ -293,7 +302,7 @@ int gpt_invalidate(const struct gpt_device *device, enum header_type type)
     return 0;
 }
 
-void gpt_dump(const struct gpt_device *device, enum header_type type)
+extern void gpt_dump(const struct gpt_device *device, enum header_type type)
 {
     ASSERT(device);
     gpt_header *header;

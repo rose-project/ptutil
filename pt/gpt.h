@@ -47,28 +47,28 @@ struct gpt_device
  * @brief gpt_init
  * @return -1 on error
  */
-int gpt_init(struct gpt_device *device, char* device_path);
+extern int gpt_init(struct gpt_device *device, char* device_path);
 
 /**
  * @brief gpt_deInit
  * @return -1 on error
  */
-int gpt_deInit(struct gpt_device *device);
+extern int gpt_deInit(struct gpt_device *device);
 
 /**
  * @brief gpt_validate
  * @return -1 on error
  */
-int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair_crc);
+extern int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair_crc);
 
 /**
  * @brief gpt_invalidate
  * @return -1 on error
  */
-int gpt_invalidate(const struct gpt_device *device, enum header_type type);
+extern int gpt_invalidate(const struct gpt_device *device, enum header_type type);
 
 /**
  * @brief gpt_dump
  */
-void gpt_dump(const struct gpt_device *device, enum header_type type);
+extern void gpt_dump(const struct gpt_device *device, enum header_type type);
 
