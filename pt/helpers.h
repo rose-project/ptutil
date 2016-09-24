@@ -34,15 +34,19 @@
  */
 
 #ifdef ENABLE_LOGGING
-#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#define _logging_macro(chan, title, format, ...) do { fprintf(chan, title "%s (%d): " format "\n", __FILENAME__, __LINE__,  ##__VA_ARGS__); fflush(chan); } while(0)
+#define LOG_FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#define _logging_macro(chan, title, format, args...) do \
+    { \
+      fprintf(chan, title "%s (%d): " format "\n", LOG_FILENAME, __LINE__,  ##args); \
+      fflush(chan); \
+    } while(0)
 #else
-#define _logging_macro(chan, format, ...)
+#define _logging_macro(chan, format, args...)
 #endif // ENABLE_LOGGING
 
-#define logDbg(format, ...)  _logging_macro(stdout, "Debug ",   format, ##__VA_ARGS__)
-#define logWarn(format, ...) _logging_macro(stderr, "Warning ", format, ##__VA_ARGS__)
-#define logErr(format, ...)  _logging_macro(stderr, "Error ",   format, ##__VA_ARGS__)
+#define logDbg(format, args...)  _logging_macro(stdout, "Debug ",   format, ## args)
+#define logWarn(format, args...) _logging_macro(stderr, "Warning ", format, ## args)
+#define logErr(format, args...)  _logging_macro(stderr, "Error ",   format, ## args)
 
 
 /*
@@ -50,7 +54,7 @@
  */
 #ifdef ENABLE_ASSERTS
 #   define debugbreak() __builtin_trap()
-#   define reportAssertionFailure(...) printf("%s (%d): %s\n", __VA_ARGS__)
+#   define reportAssertionFailure(args...) printf("%s (%d): %s\n", ## args)
 
 #   define ASSERT(expr) do { \
         if(!(expr)) {    \
