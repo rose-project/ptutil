@@ -23,49 +23,49 @@
  * SOFTWARE.
  ********************************************************************************/
 
-#ifndef HELPERS_H
-#define HELPERS_H
+#include "helpers.h"
 
-#include <stdint.h>
-#include <string.h>
+#include <stdlib.h>
 
-/*
- * Logging
- */
+extern int encode_utf16_to_utf8(unsigned char *dest, const uint16_t *src, size_t count)
+{
+    uint16_t c;
+    uint8_t *conv = (uint8_t*)src;
+    size_t i, j;
 
-#ifdef ENABLE_LOGGING
-#define LOG_FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#define _logging_macro(chan, title, format, args...) do \
-    { \
-      fprintf(chan, title "%s (%d): " format "\n", LOG_FILENAME, __LINE__,  ##args); \
-      fflush(chan); \
-    } while(0)
-#else
-#define _logging_macro(chan, format, args...)
-#endif // ENABLE_LOGGING
+    if (!dest)
+        return -1;
 
-#define logDbg(format, args...)  _logging_macro(stdout, "Debug ",   format, ## args)
-#define logWarn(format, args...) _logging_macro(stderr, "Warning ", format, ## args)
-#define logErr(format, args...)  _logging_macro(stderr, "Error ",   format, ## args)
-
-
-/*
- * Assert Macro
- */
-#ifdef ENABLE_ASSERTS
-#   define debugbreak() __builtin_trap()
-#   define reportAssertionFailure(args...) printf("%s (%d): %s\n", ## args)
-
-#   define ASSERT(expr) do { \
-        if(!(expr)) {    \
-            reportAssertionFailure(__FILE__, __LINE__, #expr); \
-            abort(); \
-        }} while(0)
-#else
-#   define ASSERT(expr)
-#endif // ENABLE_ASSERTS
-
-
-extern int encode_utf16_to_utf8(unsigned char *dest, const uint16_t *src, size_t count);
-
-#endif // HELPERS_H
+    for (i = j = 0; i + 2 <= count; i += 2)
+    {
+        c = (conv[i+1] << 8) | conv[i];
+        if (c == 0)	/* Null termination*/
+        {
+            dest[j] = '\0';
+            return 0;
+        }
+        else if (c < 0x80)
+        {
+            if (j+1 >= count)
+                break;
+            dest[j++] = (uint8_t) c;
+        }
+        else if (c < 0x800)
+        {
+            if (j+2 >= count)
+                break;
+            dest[j++] = (uint8_t) (0xc0 | (c >> 6));
+            dest[j++] = (uint8_t) (0x80 | (c & 0x3f));
+        }
+        else
+        {
+            if (j+3 >= count)
+                break;
+            dest[j++] = (uint8_t) (0xe0 | (c >> 12));
+            dest[j++] = (uint8_t) (0x80 | ((c >> 6) & 0x3f));
+            dest[j++] = (uint8_t) (0x80 | (c & 0x3f));
+        }
+    }
+    dest[j] = '\0';
+    return 0;
+}
