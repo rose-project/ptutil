@@ -30,7 +30,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-
+#include <wchar.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -40,7 +40,7 @@
 
 static const uint64_t GPT_SIGNATURE = 0x5452415020494645ULL;
 
-#define LBA_SIZE 512LL
+#define LBA_SIZE 512ULL
 
 /*
  * GPT specification could be found here:
@@ -197,6 +197,7 @@ int gpt_validate(const struct gpt_device *device, enum header_type type, bool re
     gpt_header tmpheader;
     uint32_t crc = 0;
     uint64_t signature;
+    unsigned char* entry_buffer;
 
     if(GPT_PRIMARY == type)
         header = device->primary;
@@ -206,8 +207,9 @@ int gpt_validate(const struct gpt_device *device, enum header_type type, bool re
     memcpy(&tmpheader, header, sizeof(gpt_header));
     memset(&tmpheader.header_crc32, 0x0, sizeof(tmpheader.header_crc32));
 
-    crc = calculate_crc32((unsigned char*)&tmpheader,sizeof(gpt_header));
+    crc = calculate_crc32( (unsigned char*)&tmpheader,sizeof(gpt_header));
 
+    /* Check Signature and CRC checksum */
     if( tmpheader.signature != GPT_SIGNATURE ||
         crc == 0 || (crc != header->header_crc32 && !repair_crc)
         )
@@ -216,8 +218,21 @@ int gpt_validate(const struct gpt_device *device, enum header_type type, bool re
         return -2;
     }
 
-    // TODO check header->partition_entries_lba and header->partition_entry_array_crc32
-
+    /* Check partition entries */
+    entry_buffer = (unsigned char*) malloc(header->num_partition_entries * header->sizeof_partition_entry);
+    if( -1 == lseek(device->fd, header->partition_entries_lba * LBA_SIZE, SEEK_SET))
+        return -1;
+    read(device->fd,
+         entry_buffer,
+         header->num_partition_entries * header->sizeof_partition_entry);
+    crc = calculate_crc32( entry_buffer,
+                           header->num_partition_entries * header->sizeof_partition_entry
+                           );
+    if(crc != header->partition_entry_array_crc32)
+    {
+        logErr("Calculated CRC: %ud != %ud", crc, header->partition_entry_array_crc32 );
+        return -2;
+    }
 
     if( -1 == lseek(device->fd, header->alternate_lba * LBA_SIZE, SEEK_SET))
         return -1;
@@ -282,6 +297,7 @@ void gpt_dump(const struct gpt_device *device, enum header_type type)
 {
     ASSERT(device);
     gpt_header *header;
+    struct gpt_entry  entry;
 
     if(GPT_PRIMARY == type)
         header = device->primary;
@@ -319,7 +335,24 @@ void gpt_dump(const struct gpt_device *device, enum header_type type)
     printf("Partition entry count : %u\n", header->num_partition_entries);
     printf("Partition entry size  : %d\n", header->sizeof_partition_entry);
     printf("Partition entry CRC32 : 0x%08x\n", header->partition_entry_array_crc32);
-    printf("==================================================\n");
+    printf("--------------------------------------------------\n");
+    printf("Partitions\n");
+    if( -1 == lseek(device->fd, header->partition_entries_lba * LBA_SIZE, SEEK_SET))
+        return;
+    for(uint32_t i = 0; i < header->num_partition_entries; ++i)
+    {
+        read(device->fd, &entry, sizeof (struct gpt_entry));
+        if(entry.starting_lba != 0)
+        {
+            unsigned char name[72];
+            encode_utf16_to_utf8(name, entry.partition_name, sizeof(entry.partition_name));
+            printf("--------------------------------------------------\n");
+            printf("Partition           : %s\n", name);
+            printf("UUID                : fakefake-fake-fake-fake-fakefakefake\n"); // entry.unique_partition_guid); // TODO
+            printf("Partition start LBA : 0x%016lx\n", entry.starting_lba);
+            printf("Partition ending LBA: 0x%016lx\n", entry.ending_lba);
+        }
+    }
 }
 
 static int _gpt_read_header(const struct gpt_device *device, enum header_type type)
