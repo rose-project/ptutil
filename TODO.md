@@ -12,17 +12,16 @@ Version 0.1 (in progress):
 - [x] Dump GPT Header
 
 ### Milestone 2
-- [ ] Read and validate partition entries
-- [ ] Dump partiton entries
+- [X] Read and validate partition entries
+- [X] Dump partiton entries
 
 ### Milestone 3
 - [ ] Write Unit-Tests
 - [ ] Correct error handling for EBUSY, EAGAIN etc...
-- [ ] API rework and documentation
 
 ### Milestone 4
 - [ ] PTUtility executable
-- [ ] Documentation
+- [ ] API rework and documentation
 
 Version 0.2 (planning):
 -----------------------
