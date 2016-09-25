@@ -61,6 +61,8 @@ typedef struct {
     uint8_t  node[6];
 } efi_guid_t;
 
+#define EFI_UUID_FORMAT "%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX"
+#define EFI_UUID_ARG(guid)   guid.time_low, guid.time_mid, guid.time_hi_and_version, guid.clock_seq_hi, guid.clock_seq_low, guid.node[0], guid.node[1], guid.node[2], guid.node[3], guid.node[4], guid.node[5]
 
 typedef struct {
     uint64_t uefi_flags : 64;	/*all bits reserved by UEFI*/
@@ -339,7 +341,7 @@ extern void gpt_dump(const struct gpt_device *device, enum header_type type)
     printf("First usable LBA      : 0x%016lx\n", header->first_usable_lba);
     printf("Last usable LBA       : 0x%016lx\n", header->last_usable_lba);
     printf("\n");
-    printf("Disk GUID             : fakefake-fake-fake-fake-fakefakefake\n"/*, header->disk_guid*/);	// TODO formater for UUID
+    printf("Disk GUID             : " EFI_UUID_FORMAT "\n", EFI_UUID_ARG( header->disk_guid ) );	// TODO formater for UUID
     printf("Start entry LBA       : 0x%016lx\n", header->partition_entries_lba);
     printf("Partition entry count : %u\n", header->num_partition_entries);
     printf("Partition entry size  : %d\n", header->sizeof_partition_entry);
@@ -357,7 +359,7 @@ extern void gpt_dump(const struct gpt_device *device, enum header_type type)
             encode_utf16_to_utf8(name, entry.partition_name, sizeof(entry.partition_name));
             printf("--------------------------------------------------\n");
             printf("Partition           : %s\n", name);
-            printf("UUID                : fakefake-fake-fake-fake-fakefakefake\n"); // entry.unique_partition_guid); // TODO
+            printf("UUID                : " EFI_UUID_FORMAT "\n", EFI_UUID_ARG( entry.unique_partition_guid ));
             printf("Partition start LBA : 0x%016lx\n", entry.starting_lba);
             printf("Partition ending LBA: 0x%016lx\n", entry.ending_lba);
         }
