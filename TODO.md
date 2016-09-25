@@ -18,8 +18,6 @@ Version 0.1 (in progress):
 ### Milestone 3
 - [ ] Write Unit-Tests
 - [ ] Correct error handling for EBUSY, EAGAIN etc...
-
-### Milestone 4
 - [ ] PTUtility executable
 - [ ] API rework and documentation
 

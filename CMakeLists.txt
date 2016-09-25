@@ -41,7 +41,8 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib/)
 
 option(ENABLE_LOGGING On)
-option(ENABLE_ASSERTS On)
+option(ENABLE_ASSERTS Off)
+option(UNITTESTS Off)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -58,3 +59,6 @@ endif()
 add_subdirectory(pt)
 add_subdirectory(src)
 
+if(UNITTESTS)
+    add_subdirectory(tests)
+endif()
