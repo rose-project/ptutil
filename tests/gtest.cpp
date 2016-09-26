@@ -23,57 +23,12 @@
  * SOFTWARE.
  ********************************************************************************/
 
-#ifndef HELPERS_H
-#define HELPERS_H
-
-#include <stdint.h>
-#include <string.h>
+#include <gtest/gtest.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/*
- * Logging
- */
-#ifdef ENABLE_LOGGING
-#define LOG_FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#define _logging_macro(chan, title, format, args...) do \
-    { \
-      fprintf(chan, title "%s (%d): " format "\n", LOG_FILENAME, __LINE__,  ##args); \
-      fflush(chan); \
-    } while(0)
-#else
-#define _logging_macro(chan, format, args...) do{} while(0)
-#endif // ENABLE_LOGGING
-
-#define logDbg(format, args...)  _logging_macro(stdout, "Debug ",   format, ## args)
-#define logWarn(format, args...) _logging_macro(stderr, "Warning ", format, ## args)
-#define logErr(format, args...)  _logging_macro(stderr, "Error ",   format, ## args)
-
-
-/*
- * Assert Macro
- */
-#ifdef ENABLE_ASSERTS
-#   define debugbreak() __builtin_trap()
-#   define reportAssertionFailure(args...) printf("%s (%d): %s\n", ## args)
-
-#   define ASSERT(expr) do { \
-        if(!(expr)) {    \
-            reportAssertionFailure(__FILE__, __LINE__, #expr); \
-            abort(); \
-        }} while(0)
-#else
-#   define ASSERT(expr)
-#endif // ENABLE_ASSERTS
-
-
-extern int encode_utf16_to_utf8(unsigned char *dest, const uint16_t *src, size_t count);
-
-#ifdef __cplusplus
+int main(int argc, char **argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  int ret_val = RUN_ALL_TESTS();
+  return ret_val;
 }
-#endif
-
-#endif // HELPERS_H

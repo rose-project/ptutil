@@ -15,6 +15,7 @@ set(CMAKE_SYSTEM_VERSION 1)
 #set(CMAKE_FIND_ROOT_PATH /usr/lib/gcc/x86_64-linux-gnu/ )
 
 set(CMAKE_C_COMPILER gcc)
+set(CMAKE_CXX_COMPILER g++)
 
 # search for programs in the build host directories
 #set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
@@ -27,12 +28,17 @@ set(COMPILER_WARNINGS "-Wall -Wextra -Wreturn-type")
 
 set(CMAKE_C_FLAGS "-std=gnu11 ${COMPILER_WARNINGS}"
     CACHE STRINGS "" FORCE)
+set(CMAKE_CXX_FLAGS "-std=gnu++11 -pthread ${COMPILER_WARNINGS}"
+        CACHE STRINGS "" FORCE)
 
 # Additional Debug Flags
 set(CMAKE_C_FLAGS_DEBUG "-g -O0 ${CMAKE_C_FLAGS}"
     CACHE STRINGS "" FORCE)
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 ${CMAKE_C_FLAGS}"
+        CACHE STRINGS "" FORCE)
 # Additional Release Flags
 set(CMAKE_C_FLAGS_RELEASE "-O2 ${CMAKE_C_FLAGS}"
     CACHE STRINGS "" FORCE)
-
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 ${CMAKE_C_FLAGS}"
+        CACHE STRINGS "" FORCE)
 

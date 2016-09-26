@@ -29,6 +29,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief calculate_crc32 calculates a crc32 checksum without lookup table
  * @param data pointer to array of data
@@ -58,5 +62,9 @@ uint32_t calculate_crc32(unsigned char *data, size_t lenght)
     }
     return ~crc32;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //CRC32_H

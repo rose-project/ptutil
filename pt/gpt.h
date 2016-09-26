@@ -22,6 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  ********************************************************************************/
+#ifndef GPT_H
+#define GPT_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -42,6 +44,9 @@ struct gpt_device
     gpt_header *backup;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief gpt_init
@@ -72,3 +77,8 @@ extern int gpt_invalidate(const struct gpt_device *device, enum header_type type
  */
 extern void gpt_dump(const struct gpt_device *device, enum header_type type);
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif // GPT_H
