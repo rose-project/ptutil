@@ -26,7 +26,10 @@ SET(PROJECT_NAME "ptutil")
 project(${PROJECT_NAME})
 
 
-set(PTUTIL_SRC ptutil)
+set(PTUTIL_SRC
+    ptutil
+    gptmain
+    )
 
 
 add_executable(ptutil ${PTUTIL_SRC})

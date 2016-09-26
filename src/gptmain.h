@@ -23,20 +23,17 @@
  * SOFTWARE.
  ********************************************************************************/
 
-#include <stdlib.h>
+#ifndef GPTMAIN_H
+#define GPTMAIN_H
 
-#include "src/gptmain.h"
+#include <stdbool.h>
 
-int main(int argc, char* argv[])
-{
-    /* preparations for argv0 handling,
-     * but for now only gpt is supported.
-     * So nothing todo, yet!
-     */
-    if(!gpt_main(argc,argv))
-    {
-        return EXIT_FAILURE;
-    }
+/**
+ * @brief gpt_main
+ * @param argc
+ * @param argv
+ * @return
+ */
+extern bool gpt_main(int argc, char* argv[]);
 
-    return EXIT_SUCCESS;
-}
+#endif // GPTMAIN_H
