@@ -41,7 +41,7 @@
       fflush(chan); \
     } while(0)
 #else
-#define _logging_macro(chan, format, args...)
+#define _logging_macro(chan, format, args...) do{} while(0)
 #endif // ENABLE_LOGGING
 
 #define logDbg(format, args...)  _logging_macro(stdout, "Debug ",   format, ## args)
