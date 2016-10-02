@@ -23,48 +23,18 @@
  * SOFTWARE.
  ********************************************************************************/
 
-#ifndef CRC32_H
-#define CRC32_H
+#ifndef BASICTEST_HPP
+#define BASICTEST_HPP
 
-#include <stdint.h>
-#include <stdio.h>
+#include <gtest/gtest.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <pt/crc32.h>
 
-/**
- * @brief calculate_crc32 calculates a crc32 checksum without lookup table
- * @param data pointer to array of data
- * @param lenght of data array
- * @return crc32 checksum or 0 on error
- */
-uint32_t calculate_crc32(const unsigned char *data, size_t lenght)
+
+TEST(BasicTests, CRC32)
 {
-    int i, j;
-    uint32_t byte, crc32, mask;
-
-    if(!data || lenght == 0)
-        return 0;
-
-    i = 0;
-    crc32 = 0xFFFFFFFF;
-    while (lenght--)
-    {
-        byte = data[i];
-        crc32 = crc32 ^ byte;
-        for (j = 7; j >= 0; j--)
-        {
-            mask = -(crc32 & 1);
-            crc32 = (crc32 >> 1) ^ (0xEDB88320 & mask);
-        }
-        ++i;
-    }
-    return ~crc32;
+    EXPECT_EQ(0xCBF43926, calculate_crc32((const unsigned char*)"123456789",9));
 }
 
-#ifdef __cplusplus
-}
-#endif
 
-#endif //CRC32_H
+#endif // BASICTEST_HPP

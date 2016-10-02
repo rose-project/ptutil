@@ -27,7 +27,7 @@ project(unit_tests)
 find_package(GTest)
 
 if(GTEST_FOUND)
-    add_executable(unit_test gtest.cpp)
+    add_executable(unit_test gtest.cpp basicTest gptTest)
     target_link_libraries(unit_test pt gtest)
 endif()
 

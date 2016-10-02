@@ -23,48 +23,31 @@
  * SOFTWARE.
  ********************************************************************************/
 
-#ifndef CRC32_H
-#define CRC32_H
+#ifndef GPTTEST_HPP
+#define GPTTEST_HPP
 
-#include <stdint.h>
-#include <stdio.h>
+#include <gtest/gtest.h>
+#include <pt/gpt.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief calculate_crc32 calculates a crc32 checksum without lookup table
- * @param data pointer to array of data
- * @param lenght of data array
- * @return crc32 checksum or 0 on error
- */
-uint32_t calculate_crc32(const unsigned char *data, size_t lenght)
+class GptTest : public testing::Test
 {
-    int i, j;
-    uint32_t byte, crc32, mask;
+public:
 
-    if(!data || lenght == 0)
-        return 0;
-
-    i = 0;
-    crc32 = 0xFFFFFFFF;
-    while (lenght--)
+protected:
+    virtual void SetUp()
     {
-        byte = data[i];
-        crc32 = crc32 ^ byte;
-        for (j = 7; j >= 0; j--)
-        {
-            mask = -(crc32 & 1);
-            crc32 = (crc32 >> 1) ^ (0xEDB88320 & mask);
-        }
-        ++i;
     }
-    return ~crc32;
+    virtual void TearDown()
+    {
+    }
+
+
+};
+
+TEST_F(GptTest, DeInit)
+{
+    EXPECT_EQ(0xCBF43926, calculate_crc32((const unsigned char*)"123456789",9));
 }
 
-#ifdef __cplusplus
-}
-#endif
 
-#endif //CRC32_H
+#endif // GPTTEST_HPP

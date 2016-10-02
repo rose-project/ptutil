@@ -25,6 +25,8 @@
 
 #include <gtest/gtest.h>
 
+#include "basicTest.hpp"
+#include "gptTest.hpp"
 
 int main(int argc, char **argv)
 {

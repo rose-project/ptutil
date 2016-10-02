@@ -27,3 +27,9 @@ Version 0.2 (planning):
 ### Milestone 1
 - [ ] Capability to move gpt & partition entries (e.g. if gpt not written at end of partition)
 - [ ] In-/Validation of single partition entries
+
+Version 0.3 (future):
+-----------------------
+
+### Milestone 1
+- [ ] cross compile for arm and x86/x64

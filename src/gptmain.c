@@ -36,7 +36,7 @@ void usage(const char* name)
     printf("Usage: %s [options] <disk>\n", strrchr(name, '/') ? strrchr(name, '/') + 1 : name);
     printf("\n"
            "Options:\n"
-           "   -h   -help           display this help message"
+           "   -h   -help           display this help message\n"
            "\n");
 }
 
