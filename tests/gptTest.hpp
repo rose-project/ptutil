@@ -56,7 +56,7 @@ TEST(GptTest, InValidation)
     struct gpt_device device;
     ASSERT_EQ(true, gpt_init(&device, DISK_IMAGE_PATH));
     EXPECT_EQ(0, gpt_validate(&device, GPT_PRIMARY, false));
-    EXPECT_EQ(0, gpt_invalidate(&device, GPT_PRIMARY));       // FIXME fails sometimes
+    EXPECT_EQ(0, gpt_invalidate(&device, GPT_PRIMARY));
     EXPECT_EQ(0, gpt_validate(&device, GPT_PRIMARY, true));
     ASSERT_EQ(true, gpt_deInit(&device));
 }

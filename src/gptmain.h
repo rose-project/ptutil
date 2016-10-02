@@ -29,10 +29,8 @@
 #include <stdbool.h>
 
 /**
- * @brief gpt_main
- * @param argc
- * @param argv
- * @return
+ * @brief gpt_main starts utility for gpt manipulation
+ * @return false on error
  */
 extern bool gpt_main(int argc, char* argv[]);
 

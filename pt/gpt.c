@@ -110,8 +110,160 @@ struct gpt_entry {
 } __attribute__ ((packed));
 
 
-static int _gpt_read_header(const struct gpt_device *device,
-                            uint8_t index);
+static bool _gpt_read_data(const struct gpt_device *device,
+                           void *buffer,
+                           size_t lenght,
+                           off_t offset,
+                           int whence)
+{
+    ASSERT(device);
+    ssize_t ret;
+    int retries = 20;
+
+    do
+    {
+        if( -1 == lseek(device->fd, offset, whence))
+        {
+            if(errno == EBUSY || errno == EAGAIN || errno == EINTR)
+            {
+                usleep(200 * 1000);
+                continue;
+            }
+            else
+            {
+                logErr("Error %d: %s", errno, strerror(errno));
+                return false;
+            }
+        }
+        ret = read(device->fd, buffer, lenght);
+        if(ret == -1)
+        {
+            if(errno == EBUSY || errno == EAGAIN || errno == EINTR)
+            {
+                usleep(200 * 1000);
+                continue;
+            }
+        }
+        else if(ret != (ssize_t)lenght)
+        {
+            logErr("Could not read enought data: %zd - %zd", ret, lenght);
+            return false;
+        }
+        else if(ret == (ssize_t)lenght)
+            break; // All good, leave loop
+    } while(--retries);
+    return true;
+}
+
+
+static bool _gpt_write_data(const struct gpt_device *device,
+                           void *buffer,
+                           size_t lenght,
+                           off_t offset,
+                           int whence)
+{
+    ASSERT(device);
+    ssize_t ret;
+    int retries = 20;
+
+    do
+    {
+        if( -1 == lseek(device->fd, offset, whence))
+        {
+            if(errno == EBUSY || errno == EAGAIN || errno == EINTR)
+            {
+                usleep(200 * 1000);
+                continue;
+            }
+            else
+            {
+                logErr("Error %d: %s", errno, strerror(errno));
+                return false;
+            }
+        }
+write_data:
+        ret = write(device->fd, buffer, lenght);
+        if(ret == -1)
+        {
+            if(errno == EBUSY || errno == EAGAIN || errno == EINTR)
+            {
+                usleep(200 * 1000);
+                continue;
+            }
+        }
+        else if(ret > 0 && ret != (ssize_t)lenght)
+        {
+            lenght -= ret;
+            goto write_data;
+        }
+        else
+            break; // All good, leave loop
+
+    } while(--retries);
+
+    do
+    {
+        if(0 == fsync(device->fd))
+            break;
+    }
+    while(--retries);
+
+    return true;
+}
+
+
+static bool _gpt_read_header(const struct gpt_device *device,
+                            uint8_t index)
+{
+    ASSERT(device);
+    ASSERT(index <= 1);
+    gpt_header* header = NULL;
+
+    if(GPT_PRIMARY == index)
+    {
+        header = device->primary;
+
+        if(!_gpt_read_data(device,
+                           header, sizeof(gpt_header),
+                           1 * LBA_SIZE, SEEK_SET))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        header = device->backup;
+
+        if(device->primary->signature == GPT_SIGNATURE)
+        {
+            if(!_gpt_read_data(device,
+                               header, sizeof(gpt_header),
+                               device->primary->alternate_lba * LBA_SIZE, SEEK_SET))
+            {
+                return false;
+            }
+        }
+
+        if(header->signature != GPT_SIGNATURE)
+        {
+            logWarn("No valid backup header at alternate LBA found!");
+            if(!_gpt_read_data(device,
+                               header, sizeof(gpt_header),
+                               -1 * LBA_SIZE, SEEK_END))
+            {
+                return false;
+            }
+        }
+    }
+
+    if(header->signature != GPT_SIGNATURE)
+    {
+        logErr("No valid signature found");
+        return false;
+    }
+
+    return true;
+}
 
 
 extern bool gpt_init(struct gpt_device *device,
@@ -146,12 +298,12 @@ extern bool gpt_init(struct gpt_device *device,
     }
 
     /* Init primary / backup structure */
-    if(-1 == _gpt_read_header(device, GPT_PRIMARY))
+    if(false == _gpt_read_header(device, GPT_PRIMARY))
     {
         logWarn("Primary GPT header is invalid");
         cnt++;
     }
-    if(-1 == _gpt_read_header(device, GPT_BACKUP))
+    if(false == _gpt_read_header(device, GPT_BACKUP))
     {
         logWarn("Backup GPT header is invalid");
         cnt++;
@@ -228,10 +380,14 @@ extern int gpt_validate(const struct gpt_device *device,
 
     /* Check partition entries */
     entry_buffer = (unsigned char*) malloc(header->num_partition_entries * header->sizeof_partition_entry);
-    if( -1 == lseek(device->fd, header->partition_entries_lba * LBA_SIZE, SEEK_SET))
+
+    if(!_gpt_read_data(device,
+                       entry_buffer, header->num_partition_entries * header->sizeof_partition_entry,
+                       header->partition_entries_lba * LBA_SIZE, SEEK_SET))
+    {
         goto io_error;
-    read(device->fd, entry_buffer,
-         header->num_partition_entries * header->sizeof_partition_entry);
+    }
+
     partition_crc = calculate_crc32( entry_buffer,
                            header->num_partition_entries * header->sizeof_partition_entry
                            );
@@ -241,9 +397,13 @@ extern int gpt_validate(const struct gpt_device *device,
         goto partition_entries_invalid;
     }
 
-    if( -1 == lseek(device->fd, header->alternate_lba * LBA_SIZE, SEEK_SET))
+    if(!_gpt_read_data(device,
+                       &signature, sizeof(signature),
+                       header->alternate_lba * LBA_SIZE, SEEK_SET))
+    {
         goto io_error;
-    read(device->fd, &signature, sizeof(signature));
+    }
+
     if(signature != GPT_SIGNATURE)
     {
         logErr("AlternateLBA does not point to other gpt header");
@@ -252,14 +412,13 @@ extern int gpt_validate(const struct gpt_device *device,
 
     if(header_crc != header->header_crc32 && repair_crc)
     {
-        if( -1 == lseek(device->fd, header->my_lba * LBA_SIZE + 16, SEEK_SET))
-            goto io_error;
-        if( -1 == write(device->fd, &header_crc, sizeof(header_crc)))
+        if(!_gpt_write_data(device,
+                           &header_crc, sizeof(header_crc),
+                           header->my_lba * LBA_SIZE + 16, SEEK_SET))
         {
             goto io_error;
         }
         logDbg("GPT Header repaired");
-        fsync(device->fd);
     }
 
     return 0;
@@ -299,14 +458,16 @@ extern int gpt_invalidate(const struct gpt_device *device, uint8_t index)
         }
     }
 
-    if( -1 == lseek(device->fd, header->my_lba * LBA_SIZE + 16, SEEK_SET))
-        return -1;
-    if( -1 == write(device->fd, &invalid_crc, sizeof(uint32_t)))
+    if(!_gpt_write_data(device,
+                       &invalid_crc, sizeof(invalid_crc),
+                       header->my_lba * LBA_SIZE + 16, SEEK_SET))
     {
         return -1;
     }
 
-    fsync(device->fd);	// TODO check return
+    if(!_gpt_read_header(device, index))
+        return -1;
+
     return 0;
 }
 
@@ -372,52 +533,4 @@ extern void gpt_dump(const struct gpt_device *device,
             printf("Partition ending LBA: 0x%016lx\n", entry.ending_lba);
         }
     }
-}
-
-static int _gpt_read_header(const struct gpt_device *device,
-                            uint8_t index)
-{
-    ASSERT(device);
-    ASSERT(index <= 1);
-    ssize_t ret = -1;
-    gpt_header* header = NULL;
-
-    if(GPT_PRIMARY == index)
-    {
-        header = device->primary;
-        if( -1 == lseek(device->fd, 1 * LBA_SIZE, SEEK_SET))
-            return -1;
-        ret = read(device->fd, header, sizeof(gpt_header));
-    }
-    else if(GPT_BACKUP == index)
-    {
-        header = device->backup;
-        if(device->primary->signature == GPT_SIGNATURE)
-        {
-            if( -1 == lseek(device->fd, device->primary->alternate_lba * LBA_SIZE, SEEK_SET))
-                return -1;
-            ret = read(device->fd, header, sizeof(gpt_header));
-        }
-        /* T*/
-        if(header->signature != GPT_SIGNATURE)
-        {
-            logWarn("No valid backup header at alternate LBA found!");
-            if( -1 == lseek(device->fd, -1 * LBA_SIZE, SEEK_END))
-                return -1;
-            ret = read(device->fd, header, sizeof(gpt_header));
-        }
-    }
-    else
-    {
-        logErr("Unknown HeaderType");
-        return -1;
-    }
-
-    if(ret < (ssize_t) sizeof(gpt_header) || header->signature != GPT_SIGNATURE)
-    {
-        logErr("No valid signature found");
-        return -1;
-    }
-
-    return 0;
 }
