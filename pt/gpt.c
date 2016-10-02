@@ -203,7 +203,7 @@ extern int gpt_validate(const struct gpt_device *device,
     int err = -1;
     gpt_header *header;
     gpt_header tmpheader;
-    uint32_t crc = 0;
+    uint32_t header_crc = 0, partition_crc = 0;
     uint64_t signature;
     unsigned char* entry_buffer;
 
@@ -215,14 +215,14 @@ extern int gpt_validate(const struct gpt_device *device,
     memcpy(&tmpheader, header, sizeof(gpt_header));
     memset(&tmpheader.header_crc32, 0x0, sizeof(tmpheader.header_crc32));
 
-    crc = calculate_crc32( (unsigned char*)&tmpheader,sizeof(gpt_header));
+    header_crc = calculate_crc32( (unsigned char*)&tmpheader,sizeof(gpt_header));
 
     /* Check Signature and CRC checksum */
     if( tmpheader.signature != GPT_SIGNATURE ||
-        crc == 0 || (crc != header->header_crc32 && !repair_crc)
+        header_crc == 0 || (header_crc != header->header_crc32 && !repair_crc)
         )
     {
-        logErr("Calculated CRC: %ud != %ud", crc, header->header_crc32 );
+        logErr("Calculated CRC: %ud != %ud", header_crc, header->header_crc32 );
         return -2;
     }
 
@@ -232,12 +232,12 @@ extern int gpt_validate(const struct gpt_device *device,
         goto io_error;
     read(device->fd, entry_buffer,
          header->num_partition_entries * header->sizeof_partition_entry);
-    crc = calculate_crc32( entry_buffer,
+    partition_crc = calculate_crc32( entry_buffer,
                            header->num_partition_entries * header->sizeof_partition_entry
                            );
-    if(crc != header->partition_entry_array_crc32)
+    if(partition_crc != header->partition_entry_array_crc32)
     {
-        logErr("Calculated CRC: %ud != %ud", crc, header->partition_entry_array_crc32 );
+        logErr("Calculated CRC: %ud != %ud", partition_crc, header->partition_entry_array_crc32 );
         goto partition_entries_invalid;
     }
 
@@ -250,11 +250,11 @@ extern int gpt_validate(const struct gpt_device *device,
         goto partition_entries_invalid;
     }
 
-    if(crc != header->header_crc32 && repair_crc)
+    if(header_crc != header->header_crc32 && repair_crc)
     {
         if( -1 == lseek(device->fd, header->my_lba * LBA_SIZE + 16, SEEK_SET))
             goto io_error;
-        if( -1 == write(device->fd, &crc, sizeof(crc)))
+        if( -1 == write(device->fd, &header_crc, sizeof(header_crc)))
         {
             goto io_error;
         }
