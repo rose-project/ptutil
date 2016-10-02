@@ -110,10 +110,12 @@ struct gpt_entry {
 } __attribute__ ((packed));
 
 
-static int _gpt_read_header(const struct gpt_device *device, enum header_type type);
+static int _gpt_read_header(const struct gpt_device *device,
+                            uint8_t index);
 
 
-extern int gpt_init(struct gpt_device *device, char *device_path)
+extern bool gpt_init(struct gpt_device *device,
+                     const char *device_path)
 {
     ASSERT(device);
     ASSERT(device_path);
@@ -135,7 +137,7 @@ extern int gpt_init(struct gpt_device *device, char *device_path)
         goto device_failed;
     }
 
-    logDbg("Open %s...", device_path);
+//    logDbg("Open %s...", device_path);
     device->fd = open( device_path, O_EXCL | O_SYNC | O_RDWR );
     if(-1 == device->fd)
     {
@@ -161,7 +163,7 @@ extern int gpt_init(struct gpt_device *device, char *device_path)
         goto device_failed;
     }
 
-    return 0;
+    return true;
 
 device_failed:
     if(device->fd >= 0)
@@ -173,10 +175,10 @@ device_failed:
     device->backup  = NULL;
     device->fd = -1;
 gpt_malloc_failed:
-    return -1;
+    return false;
 }
 
-extern int gpt_deInit(struct gpt_device *device)
+extern bool gpt_deInit(struct gpt_device *device)
 {
     ASSERT(device);
     if( -1 != device->fd )
@@ -188,13 +190,16 @@ extern int gpt_deInit(struct gpt_device *device)
     device->path = NULL;
     device->primary = NULL;
     device->backup  = NULL;
-    return 0;
+    return true;
 }
 
 
-extern int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair_crc)
+extern int gpt_validate(const struct gpt_device *device,
+                        uint8_t index,
+                        bool repair_crc)
 {
     ASSERT(device);
+    ASSERT(index <= 1);
     int err = -1;
     gpt_header *header;
     gpt_header tmpheader;
@@ -202,7 +207,7 @@ extern int gpt_validate(const struct gpt_device *device, enum header_type type, 
     uint64_t signature;
     unsigned char* entry_buffer;
 
-    if(GPT_PRIMARY == type)
+    if(GPT_PRIMARY == index)
         header = device->primary;
     else
         header = device->backup;
@@ -269,14 +274,15 @@ partition_entries_invalid:
     return err;
 }
 
-extern int gpt_invalidate(const struct gpt_device *device, enum header_type type)
+extern int gpt_invalidate(const struct gpt_device *device, uint8_t index)
 {
     ASSERT(device);
+    ASSERT(index <= 1);
     gpt_header *header;
     uint32_t invalid_crc = 0x00000000;
 
     /* other gpt header must be valid, else invalidate would possible brick system */
-    if(GPT_PRIMARY == type)
+    if(GPT_PRIMARY == index)
     {
         header = device->primary;
         if( gpt_validate(device,GPT_BACKUP,false))
@@ -304,13 +310,15 @@ extern int gpt_invalidate(const struct gpt_device *device, enum header_type type
     return 0;
 }
 
-extern void gpt_dump(const struct gpt_device *device, enum header_type type)
+extern void gpt_dump(const struct gpt_device *device,
+                     uint8_t index)
 {
     ASSERT(device);
+    ASSERT(index <= 1);
     gpt_header *header;
     struct gpt_entry  entry;
 
-    if(GPT_PRIMARY == type)
+    if(GPT_PRIMARY == index)
         header = device->primary;
     else
         header = device->backup;
@@ -322,7 +330,7 @@ extern void gpt_dump(const struct gpt_device *device, enum header_type type)
     }
 
     printf("==================================================\n");
-    printf("Dump - %s - gpt header\n", GPT_PRIMARY == type ? "PRIMARY" : "BACKUP");
+    printf("Dump - %s - gpt header\n", GPT_PRIMARY == index ? "PRIMARY" : "BACKUP");
     printf("--------------------------------------------------\n");
     printf("GPT Header Informations\n");
     printf("--------------------------------------------------\n");
@@ -366,20 +374,22 @@ extern void gpt_dump(const struct gpt_device *device, enum header_type type)
     }
 }
 
-static int _gpt_read_header(const struct gpt_device *device, enum header_type type)
+static int _gpt_read_header(const struct gpt_device *device,
+                            uint8_t index)
 {
     ASSERT(device);
+    ASSERT(index <= 1);
     ssize_t ret = -1;
     gpt_header* header = NULL;
 
-    if(GPT_PRIMARY == type)
+    if(GPT_PRIMARY == index)
     {
         header = device->primary;
         if( -1 == lseek(device->fd, 1 * LBA_SIZE, SEEK_SET))
             return -1;
         ret = read(device->fd, header, sizeof(gpt_header));
     }
-    else if(GPT_BACKUP == type)
+    else if(GPT_BACKUP == index)
     {
         header = device->backup;
         if(device->primary->signature == GPT_SIGNATURE)

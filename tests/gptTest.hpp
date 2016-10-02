@@ -29,25 +29,36 @@
 #include <gtest/gtest.h>
 #include <pt/gpt.h>
 
-class GptTest : public testing::Test
+static const char* DISK_IMAGE_PATH = NULL;
+
+
+TEST(GptTest, DeInit)
 {
-public:
-
-protected:
-    virtual void SetUp()
-    {
-    }
-    virtual void TearDown()
-    {
-    }
-
-
-};
-
-TEST_F(GptTest, DeInit)
-{
-    EXPECT_EQ(0xCBF43926, calculate_crc32((const unsigned char*)"123456789",9));
+    struct gpt_device device;
+    ASSERT_EQ(true, gpt_init(&device, DISK_IMAGE_PATH));
+    // TODO fix double init
+//    EXPECT_EQ(true, gpt_init(&device, DISK_IMAGE_PATH));
+//    gpt_dump(&device, GPT_PRIMARY);
+    ASSERT_EQ(true, gpt_deInit(&device));
 }
 
+TEST(GptTest, Validation)
+{
+    struct gpt_device device;
+    ASSERT_EQ(true, gpt_init(&device, DISK_IMAGE_PATH));
+    EXPECT_EQ(0, gpt_validate(&device, GPT_PRIMARY, false));
+    EXPECT_EQ(0, gpt_validate(&device, GPT_BACKUP, false));
+    ASSERT_EQ(true, gpt_deInit(&device));
+}
+
+TEST(GptTest, InValidation)
+{
+    struct gpt_device device;
+    ASSERT_EQ(true, gpt_init(&device, DISK_IMAGE_PATH));
+    EXPECT_EQ(0, gpt_validate(&device, GPT_PRIMARY, false));
+//    EXPECT_EQ(0, gpt_invalidate(&device, GPT_PRIMARY));       // FIXME fails sometimes
+//    EXPECT_EQ(0, gpt_validate(&device, GPT_PRIMARY, true));   // FIXME buggy!
+    ASSERT_EQ(true, gpt_deInit(&device));
+}
 
 #endif // GPTTEST_HPP

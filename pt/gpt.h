@@ -28,7 +28,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-enum header_type {
+enum gpt_header_type {
     GPT_PRIMARY = 0,
     GPT_BACKUP  = 1,
 };
@@ -49,33 +49,48 @@ extern "C" {
 #endif
 
 /**
- * @brief gpt_init
- * @return -1 on error
+ * @brief gpt_init must be called to initialize the gpt_device structure
+ * and to open the given device or file container
+ * @param device uninitialized device struct
+ * @param device_path path to a gpt image or disk
+ * @return false on error
  */
-extern int gpt_init(struct gpt_device *device, char* device_path);
+extern bool gpt_init(struct gpt_device *device,
+                     const char* device_path);
 
 /**
- * @brief gpt_deInit
- * @return -1 on error
+ * @brief gpt_deInit deallocates gpt_device and close all open file descriptors
+ * @param device initialized structure
+ * @return false on error
  */
-extern int gpt_deInit(struct gpt_device *device);
+extern bool gpt_deInit(struct gpt_device *device);
 
 /**
  * @brief gpt_validate
+ * @param device initialized structure
+ * @param index primary/backup gpt table index
  * @return -1 on error
  */
-extern int gpt_validate(const struct gpt_device *device, enum header_type type, bool repair_crc);
+extern int gpt_validate(const struct gpt_device *device,
+                        uint8_t index,
+                        bool repair_crc);
 
 /**
  * @brief gpt_invalidate
+ * @param device initialized structure
+ * @param index primary/backup gpt table index
  * @return -1 on error
  */
-extern int gpt_invalidate(const struct gpt_device *device, enum header_type type);
+extern int gpt_invalidate(const struct gpt_device *device,
+                          uint8_t index);
 
 /**
- * @brief gpt_dump
+ * @brief gpt_dump display all relevant gpt table informations and partition entries
+ * @param device initialized structure
+ * @param index primary/backup gpt table index
  */
-extern void gpt_dump(const struct gpt_device *device, enum header_type type);
+extern void gpt_dump(const struct gpt_device *device,
+                     uint8_t index);
 
 #ifdef __cplusplus
 }

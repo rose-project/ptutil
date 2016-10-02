@@ -39,29 +39,7 @@ extern "C" {
  * @param lenght of data array
  * @return crc32 checksum or 0 on error
  */
-uint32_t calculate_crc32(const unsigned char *data, size_t lenght)
-{
-    int i, j;
-    uint32_t byte, crc32, mask;
-
-    if(!data || lenght == 0)
-        return 0;
-
-    i = 0;
-    crc32 = 0xFFFFFFFF;
-    while (lenght--)
-    {
-        byte = data[i];
-        crc32 = crc32 ^ byte;
-        for (j = 7; j >= 0; j--)
-        {
-            mask = -(crc32 & 1);
-            crc32 = (crc32 >> 1) ^ (0xEDB88320 & mask);
-        }
-        ++i;
-    }
-    return ~crc32;
-}
+extern uint32_t calculate_crc32(const unsigned char *data, size_t lenght);
 
 #ifdef __cplusplus
 }

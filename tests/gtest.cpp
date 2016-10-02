@@ -30,7 +30,11 @@
 
 int main(int argc, char **argv)
 {
-  testing::InitGoogleTest(&argc, argv);
-  int ret_val = RUN_ALL_TESTS();
-  return ret_val;
+    testing::InitGoogleTest(&argc, argv);
+
+    if(argc >= 2)
+        DISK_IMAGE_PATH = argv[1];
+
+    int ret_val = RUN_ALL_TESTS();
+    return ret_val;
 }

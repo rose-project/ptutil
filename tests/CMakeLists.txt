@@ -30,6 +30,3 @@ if(GTEST_FOUND)
     add_executable(unit_test gtest.cpp basicTest gptTest)
     target_link_libraries(unit_test pt gtest)
 endif()
-
-add_executable(validateNdump validate.c)
-target_link_libraries(validateNdump pt)

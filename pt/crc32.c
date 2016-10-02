@@ -23,59 +23,31 @@
  * SOFTWARE.
  ********************************************************************************/
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <unistd.h>
-
 #include "pt/gpt.h"
-#include "pt/helpers.h"
 
-int main(int argc, char* argv[])
+#include <stdint.h>
+#include <stdio.h>
+
+extern uint32_t calculate_crc32(const unsigned char *data, size_t lenght)
 {
-    char* path = NULL;
-    int ret = EXIT_SUCCESS;
+    int i, j;
+    uint32_t byte, crc32, mask;
 
-    struct gpt_device device;
+    if(!data || lenght == 0)
+        return 0;
 
-    if(argc == 1)
+    i = 0;
+    crc32 = 0xFFFFFFFF;
+    while (lenght--)
     {
-        logErr("Usage: %s TESTFILE", argv[0]);
-        return EXIT_FAILURE;
+        byte = data[i];
+        crc32 = crc32 ^ byte;
+        for (j = 7; j >= 0; j--)
+        {
+            mask = -(crc32 & 1);
+            crc32 = (crc32 >> 1) ^ (0xEDB88320 & mask);
+        }
+        ++i;
     }
-
-    path = argv[1];
-
-    if( gpt_init(&device, path) )
-    {
-        logErr("Init failed");
-        return EXIT_FAILURE;
-    }
-
-    if( gpt_validate(&device, GPT_PRIMARY, false) )
-    {
-        logErr("Primary gpt invalid");
-        ret = EXIT_FAILURE;
-        goto failed_action;
-    }
-
-    if( gpt_validate(&device, GPT_BACKUP, false) )
-    {
-        logErr("Backup gpt invalid");
-        ret = EXIT_FAILURE;
-        goto failed_action;
-    }
-
-    gpt_dump(&device, GPT_PRIMARY);
-    gpt_dump(&device, GPT_BACKUP);
-
-failed_action:
-
-    if( gpt_deInit(&device) )
-    {
-        logErr("DeInit failed");
-        ret = EXIT_FAILURE;
-    }
-
-    return ret;
+    return ~crc32;
 }
