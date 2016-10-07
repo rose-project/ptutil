@@ -79,10 +79,13 @@ extern int gpt_validate(const struct gpt_device *device,
  * @brief gpt_invalidate
  * @param device initialized structure
  * @param index primary/backup gpt table index
+ * @param force if set to true, other table will not be validated!
+ *        Use only with caution! Should never done on a boot disk!
  * @return -1 on error
  */
 extern int gpt_invalidate(const struct gpt_device *device,
-                          uint8_t index);
+                          uint8_t index,
+                          bool force);
 
 /**
  * @brief gpt_dump display all relevant gpt table informations and partition entries

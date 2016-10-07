@@ -367,14 +367,14 @@ extern int gpt_validate(const struct gpt_device *device,
     memcpy(&tmpheader, header, sizeof(gpt_header));
     memset(&tmpheader.header_crc32, 0x0, sizeof(tmpheader.header_crc32));
 
-    header_crc = calculate_crc32( (unsigned char*)&tmpheader,sizeof(gpt_header));
+    header_crc = calculate_crc32( (unsigned char*)&tmpheader, sizeof(gpt_header) );
 
     /* Check Signature and CRC checksum */
     if( tmpheader.signature != GPT_SIGNATURE ||
         header_crc == 0 || (header_crc != header->header_crc32 && !repair_crc)
         )
     {
-        logErr("Calculated CRC: %ud != %ud", header_crc, header->header_crc32 );
+        logDbg("Calculated CRC: %ud != %ud", header_crc, header->header_crc32);
         return -2;
     }
 
@@ -433,7 +433,9 @@ partition_entries_invalid:
     return err;
 }
 
-extern int gpt_invalidate(const struct gpt_device *device, uint8_t index)
+extern int gpt_invalidate(const struct gpt_device *device,
+                          uint8_t index,
+                          bool force)
 {
     ASSERT(device);
     ASSERT(index <= 1);
@@ -444,7 +446,7 @@ extern int gpt_invalidate(const struct gpt_device *device, uint8_t index)
     if(GPT_PRIMARY == index)
     {
         header = device->primary;
-        if( gpt_validate(device,GPT_BACKUP,false))
+        if( !force && gpt_validate(device, GPT_BACKUP, false))
         {
             return -1;
         }
@@ -452,7 +454,7 @@ extern int gpt_invalidate(const struct gpt_device *device, uint8_t index)
     else
     {
         header = device->backup;
-        if(gpt_validate(device,GPT_PRIMARY,false))
+        if( !force && gpt_validate(device, GPT_PRIMARY, false))
         {
             return -1;
         }
