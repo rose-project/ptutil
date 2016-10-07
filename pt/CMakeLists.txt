@@ -27,6 +27,4 @@ set(GPT_LIBRARY_SRC gpt
         crc32
         )
 
-
 add_library(pt STATIC ${GPT_LIBRARY_SRC})
-

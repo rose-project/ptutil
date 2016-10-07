@@ -47,8 +47,9 @@ extern bool gpt_main(int argc, char* argv[])
     const char* diskname = NULL;
 
     static struct option long_options[] = {
-        {"help",    no_argument, 0, 'h'},
-        {0, 0, 0, 0}
+        {"help",    no_argument, NULL, 'h'},
+        {"verbose", no_argument, &VERBOSE_LOGGING_FLAG, 1 },
+        {NULL, 0, NULL, 0}
     };
 
     while(-1 != ( c = getopt_long (argc, argv, "h",
@@ -74,15 +75,17 @@ extern bool gpt_main(int argc, char* argv[])
         }
     }
 
-    if (argc == 1 || optind >= argc)
+    if(optind >= argc)
     {
         usage(argv[0]);
         return false;
     }
 
     diskname = argv[optind];    // ignore further paths
+    logDbg("Disk: %s", diskname);
 
     /* Do something powerfull here! */
+
 
     return true;
 }

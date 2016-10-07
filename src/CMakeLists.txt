@@ -25,12 +25,10 @@ cmake_minimum_required(VERSION 2.8)
 SET(PROJECT_NAME "ptutil")
 project(${PROJECT_NAME})
 
-
 set(PTUTIL_SRC
     ptutil
     gptmain
     )
-
 
 add_executable(ptutil ${PTUTIL_SRC})
 

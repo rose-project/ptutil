@@ -37,20 +37,19 @@ extern "C" {
 /*
  * Logging
  */
+static int VERBOSE_LOGGING_FLAG = 0;
+
 #ifdef ENABLE_LOGGING
 #define LOG_FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#define _logging_macro(chan, title, format, args...) do \
-    { \
-      fprintf(chan, title "%s (%d): " format "\n", LOG_FILENAME, __LINE__,  ##args); \
-      fflush(chan); \
-    } while(0)
+#define _logging_macro(chan, title, format, args...) \
+    fprintf(chan, title "%s (%d): " format "\n", LOG_FILENAME, __LINE__,  ##args); fflush(chan);
 #else
-#define _logging_macro(chan, format, args...) do{} while(0)
+#define _logging_macro(chan, format, args...)
 #endif // ENABLE_LOGGING
 
-#define logDbg(format, args...)  _logging_macro(stdout, "Debug ",   format, ## args)
-#define logWarn(format, args...) _logging_macro(stderr, "Warning ", format, ## args)
-#define logErr(format, args...)  _logging_macro(stderr, "Error ",   format, ## args)
+#define logDbg(format, args... )  do { if(VERBOSE_LOGGING_FLAG){ _logging_macro(stdout, "Debug ",   format, ## args); }} while(0)
+#define logWarn(format, args... ) do { _logging_macro(stderr, "Warning ", format, ## args) } while(0)
+#define logErr(format, args... )  do { _logging_macro(stderr, "Error ",   format, ## args) } while(0)
 
 
 /*

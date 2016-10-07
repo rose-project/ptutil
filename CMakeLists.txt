@@ -40,9 +40,9 @@ Message(STATUS "Using C Flags: ${CMAKE_C_FLAGS}")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib/)
 
-option(ENABLE_LOGGING On)
-option(ENABLE_ASSERTS Off)
-option(UNITTESTS Off)
+option(ENABLE_LOGGING "Switch for error logging" On)
+option(ENABLE_ASSERTS "Switch to activate asserts" Off)
+option(UNITTESTS "Unit testing for developing" Off)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
