@@ -31,13 +31,34 @@
 #include "pt/gpt.h"
 #include "pt/helpers.h"
 
+enum ACTIONS
+{
+    ACT_DUMP = 0,
+    ACT_VALIDATE,
+    ACT_INVALIDATE,
+    ACT_INVALID = 255
+};
+
 void usage(const char* name)
 {
     printf("Usage: %s [options] <disk>\n", strrchr(name, '/') ? strrchr(name, '/') + 1 : name);
     printf("\n"
-           "Options:\n"
-           "   -h   --help           display this help message\n"
-           "        --verbose        activate verbose logging\n"
+           "Selection:\n"
+           "        --primary       select table from disk begin\n"
+           "        --backup        select table from disk end\n"
+           "General options:\n"
+           "    -d  --dump          Dump gpt and partition informations\n"
+           "Gpt options:\n"
+           "        --validate      validates gpt header\n"
+           "        --invalidate    invalidates gpt header (writes zeros in crc32 checksum section)\n"
+           "    -f  --force         action will be forced, use with caution!\n"
+           "                        This could lead to a broken system!\n"
+           "    -r  --repair        gpt validate should try to repair an invalidated gpt table\n"
+           "Partition options:\n"
+           "\n"
+           "Others:\n"
+           "   -h   --help          display this help message\n"
+           "        --verbose       activate verbose logging\n"
            "\n");
 }
 
@@ -45,15 +66,29 @@ extern bool gpt_main(int argc, char* argv[])
 {
     int c;
     int option_index = 0;
+    struct gpt_device device;
     const char* diskname = NULL;
 
+    static int8_t selection = -1;
+    static int action = ACT_INVALID;
+    bool force = false,
+         repair = false;
+
     static struct option long_options[] = {
+        {"verbose",    no_argument, &VERBOSE_LOGGING_FLAG, 1 },
+        {"validate",   no_argument, &action, ACT_VALIDATE },
+        {"invalidate", no_argument, &action, ACT_INVALIDATE },
+        /* without flag setter */
+        {"primary", no_argument, NULL,  0 },
+        {"backup",  no_argument, NULL,  0 },
+        {"dump",    no_argument, NULL, 'd'},
+        {"force",   no_argument, NULL, 'f'},
         {"help",    no_argument, NULL, 'h'},
-        {"verbose", no_argument, &VERBOSE_LOGGING_FLAG, 1 },
+        {"repair",  no_argument, NULL, 'r'},
         {NULL, 0, NULL, 0}
     };
 
-    while(-1 != ( c = getopt_long (argc, argv, "h",
+    while(-1 != ( c = getopt_long (argc, argv, "dfhr",
                                    long_options, &option_index) ))
     {
         switch(c)
@@ -61,10 +96,30 @@ extern bool gpt_main(int argc, char* argv[])
         case 0:
             if(long_options[option_index].flag != 0)
                 break;
-            /*
-             * TODO if long_options[option_index].name
-             *      has optarg and is only long opt then handle it here
-             */
+            if(0 == strcmp(long_options[option_index].name, "primary") ||
+               0 == strcmp(long_options[option_index].name, "backup"))
+            {
+                if(selection != -1)
+                {
+                    fprintf(stderr, "Primary and backup flag could not be set at same time\n");
+                    usage(argv[0]);
+                    return false;
+                }
+                else if(0 == strcmp(long_options[option_index].name, "primary"))
+                    selection = GPT_PRIMARY;
+                else
+                    selection = GPT_BACKUP;
+            }
+
+                break;
+        case 'd':
+            action = ACT_DUMP;
+            break;
+        case 'f':
+            force = true;
+            break;
+        case 'r':
+            repair = true;
             break;
         case 'h':
             /*fallthrough*/
@@ -76,7 +131,7 @@ extern bool gpt_main(int argc, char* argv[])
         }
     }
 
-    if(optind >= argc)
+    if(optind >= argc || selection == -1)
     {
         usage(argv[0]);
         return false;
@@ -85,8 +140,34 @@ extern bool gpt_main(int argc, char* argv[])
     diskname = argv[optind];    // ignore further paths
     logDbg("Disk: %s", diskname);
 
-    /* Do something powerfull here! */
+    if(!gpt_init(&device, diskname))
+    {
+        return false;
+    }
 
+    switch(action)
+    {
+    case ACT_DUMP:
+        gpt_dump(&device, (uint8_t)selection);
+        break;
+    case ACT_INVALIDATE:
+        if( gpt_invalidate(&device, (uint8_t)selection, force) )
+            logErr("%s-GPT could not be invalidated",
+                   selection == GPT_PRIMARY ? "Primary" : "Backup");
+        else
+            printf("%s-GPT is invalid now\n",
+                   selection == GPT_PRIMARY ? "Primary" : "Backup");
+        break;
+    case ACT_VALIDATE:
+        if( gpt_validate(&device, (uint8_t)selection,repair) )
+            logErr("%s-GPT is not valid",
+                   selection == GPT_PRIMARY ? "Primary" : "Backup");
+        else
+            printf("%s-GPT is valid\n",
+                   selection == GPT_PRIMARY ? "Primary" : "Backup");
+        break;
+    }
 
+    gpt_deInit(&device);
     return true;
 }

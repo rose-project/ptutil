@@ -16,10 +16,11 @@ Version 0.1 (in progress):
 - [X] Dump partiton entries
 
 ### Milestone 3
-- [ ] Write Unit-Tests
+- [x] Write Unit-Tests
 - [ ] Correct error handling for EBUSY, EAGAIN etc...
-- [ ] PTUtility executable
-- [ ] API rework and documentation
+- [x] PTUtility executable
+- [x] API rework and documentation
+- [ ] Write README.md project description
 
 Version 0.2 (planning):
 -----------------------
