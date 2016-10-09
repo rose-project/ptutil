@@ -66,22 +66,28 @@ extern bool gpt_init(struct gpt_device *device,
 extern bool gpt_deInit(struct gpt_device *device);
 
 /**
- * @brief gpt_validate
+ * @brief gpt_validate checks the gpt header and partition entries
  * @param device initialized structure
  * @param index primary/backup gpt table index
+ * @param repair_crc on true it repairs an invalidated header
  * @return -1 on error
+ *          0 on success
+ *          1 on reparable error
  */
 extern int gpt_validate(const struct gpt_device *device,
                         uint8_t index,
                         bool repair_crc);
 
 /**
- * @brief gpt_invalidate
+ * @brief gpt_invalidate invalidates the crc checksum of given header index
+ *        only if other header is ok or the more dangerous force flag was set
  * @param device initialized structure
  * @param index primary/backup gpt table index
  * @param force if set to true, other table will not be validated!
  *        Use only with caution! Should never done on a boot disk!
  * @return -1 on error
+ *          0 on success
+ *          1 on reparable error
  */
 extern int gpt_invalidate(const struct gpt_device *device,
                           uint8_t index,

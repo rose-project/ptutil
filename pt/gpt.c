@@ -375,7 +375,7 @@ extern int gpt_validate(const struct gpt_device *device,
         )
     {
         logDbg("Calculated CRC: %ud != %ud", header_crc, header->header_crc32);
-        return -2;
+        return 1;
     }
 
     /* Check partition entries */
@@ -448,7 +448,7 @@ extern int gpt_invalidate(const struct gpt_device *device,
         header = device->primary;
         if( !force && gpt_validate(device, GPT_BACKUP, false))
         {
-            return -1;
+            return 1;
         }
     }
     else
@@ -456,7 +456,7 @@ extern int gpt_invalidate(const struct gpt_device *device,
         header = device->backup;
         if( !force && gpt_validate(device, GPT_PRIMARY, false))
         {
-            return -1;
+            return 1;
         }
     }
 

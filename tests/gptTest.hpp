@@ -36,9 +36,6 @@ TEST(GptTest, DeInit)
 {
     struct gpt_device device;
     ASSERT_EQ(true, gpt_init(&device, DISK_IMAGE_PATH));
-    // TODO fix double init
-//    EXPECT_EQ(true, gpt_init(&device, DISK_IMAGE_PATH));
-//    gpt_dump(&device, GPT_PRIMARY);
     ASSERT_EQ(true, gpt_deInit(&device));
 }
 
@@ -57,6 +54,7 @@ TEST(GptTest, InValidation)
     ASSERT_EQ(true, gpt_init(&device, DISK_IMAGE_PATH));
     EXPECT_EQ(0, gpt_validate(&device, GPT_PRIMARY, false));
     EXPECT_EQ(0, gpt_invalidate(&device, GPT_PRIMARY, false));
+    EXPECT_EQ(1, gpt_validate(&device, GPT_PRIMARY, false));
     EXPECT_EQ(0, gpt_validate(&device, GPT_PRIMARY, true));
     ASSERT_EQ(true, gpt_deInit(&device));
 }
@@ -67,7 +65,7 @@ TEST(GptTest, ForceInValidation)
     ASSERT_EQ(true, gpt_init(&device, DISK_IMAGE_PATH));
     EXPECT_EQ( 0,   gpt_validate(&device,   GPT_PRIMARY, false));
     EXPECT_EQ( 0,   gpt_invalidate(&device, GPT_PRIMARY, false));
-    EXPECT_EQ(-1,   gpt_invalidate(&device, GPT_BACKUP,  false));
+    EXPECT_EQ( 1,   gpt_invalidate(&device, GPT_BACKUP,  false));
     EXPECT_EQ( 0,   gpt_invalidate(&device, GPT_BACKUP,  true));
     EXPECT_EQ( 0,   gpt_validate(&device,   GPT_PRIMARY, true));
     EXPECT_EQ( 0,   gpt_validate(&device,   GPT_BACKUP,  true));

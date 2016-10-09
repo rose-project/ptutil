@@ -17,7 +17,7 @@ Version 0.1 (in progress):
 
 ### Milestone 3
 - [x] Write Unit-Tests
-- [ ] Correct error handling for EBUSY, EAGAIN etc...
+- [X] Correct error handling for EBUSY, EAGAIN etc...
 - [x] PTUtility executable
 - [x] API rework and documentation
 - [ ] Write README.md project description
