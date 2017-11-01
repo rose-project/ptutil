@@ -6,10 +6,10 @@ them in case of a software update or a corrupted primary system without an user
 interaction, this tool could help.
 
 ## Table of Contents
-- [What's new](#What's new)
-- [Dependencies](#Dependencies)
-- [How to build](#How to build?)
-- [Example](#Example)
+- [What's new](#whats-new)
+- [Dependencies](#dependencies)
+- [How to build](#how-to-build)
+- [Example](#example)
 
 ## Versioning
 
@@ -17,7 +17,7 @@ interaction, this tool could help.
 major.minor.patch
 ```
 
-## What's new ?
+## What's new
 
 ###### Version 0.1.0: First version for gpt manipulation (x64 tested only)
 * gpt header validation and invalidation
@@ -28,7 +28,7 @@ major.minor.patch
 * gcc >= 4.7.3 (c11 support)
 * GTest (optional)
 
-## How to build?
+## How to build
 
 ```
 mkdir build && cd build
