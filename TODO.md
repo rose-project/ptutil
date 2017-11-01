@@ -1,36 +1,17 @@
 TODO
 ====
 
-Version 0.1 (in progress):
---------------------------
-
-### Milestone 1
-
-- [x] CMake Buildsystem
-- [x] Basic De-/Init of GPT Header structure
-- [x] In-/Validate GPT Header
-- [x] Dump GPT Header
-
-### Milestone 2
-- [x] Read and validate partition entries
-- [x] Dump partiton entries
-
-### Milestone 3
-- [x] Write Unit-Tests
-- [x] Correct error handling for EBUSY, EAGAIN etc...
-- [x] PTUtility executable
-- [x] API rework and documentation
-- [x] Write README.md project description
-
-Version 0.2 (planning):
+Version 0.2 (progress):
 -----------------------
 
 ### Milestone 1
 - [ ] Capability to move gpt & partition entries (e.g. if gpt not written at end of partition)
 - [ ] In-/Validation of single partition entries
 
+### Milestone 2
+- [ ] cross compile for arm and x86/x64
+
 Version 0.3 (future):
 -----------------------
 
-### Milestone 1
-- [ ] cross compile for arm and x86/x64
+- [ ] implement a hack which allows switching between RPI boot partitions (Hybrid MBR like)
