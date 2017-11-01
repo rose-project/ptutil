@@ -50,9 +50,11 @@ include_directories(
     )
 
 if(ENABLE_LOGGING)
+    Message(STATUS "Logging activated")
     add_definitions( -DENABLE_LOGGING )
 endif()
 if(ENABLE_ASSERTS)
+    Message(STATUS "Asserts activated")
     add_definitions( -DENABLE_ASSERTS )
 endif()
 
