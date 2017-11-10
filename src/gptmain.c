@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
 
@@ -36,6 +37,7 @@ enum ACTIONS
     ACT_DUMP = 0,
     ACT_VALIDATE,
     ACT_INVALIDATE,
+    ACT_MOVE,
     ACT_INVALID = 255
 };
 
@@ -54,6 +56,8 @@ void usage(const char* name)
            "    -f  --force         action will be forced, use with caution!\n"
            "                        This could lead to a broken system!\n"
            "    -r  --repair        gpt validate should try to repair an invalidated gpt table\n"
+           "    -m  --move          move gpt table to it's default position or to another given by address parameter\n"
+           "	-a                  absolute address in bytes"
            "Partition options:\n"
            "\n"
            "Others:\n"
@@ -71,7 +75,8 @@ extern bool gpt_main(int argc, char* argv[])
 
     static int8_t selection = -1;
     static int action = ACT_INVALID;
-    bool force = false,
+    size_t address = 0;
+    bool force  = false,
          repair = false;
 
     static struct option long_options[] = {
@@ -85,10 +90,11 @@ extern bool gpt_main(int argc, char* argv[])
         {"force",   no_argument, NULL, 'f'},
         {"help",    no_argument, NULL, 'h'},
         {"repair",  no_argument, NULL, 'r'},
+        {"move",    no_argument, NULL, 'm'},
         {NULL, 0, NULL, 0}
     };
 
-    while(-1 != ( c = getopt_long (argc, argv, "dfhr",
+    while(-1 != ( c = getopt_long (argc, argv, "dfhrma:",
                                    long_options, &option_index) ))
     {
         switch(c)
@@ -101,7 +107,7 @@ extern bool gpt_main(int argc, char* argv[])
             {
                 if(selection != -1)
                 {
-                    fprintf(stderr, "Primary and backup flag could not be set at same time\n");
+                    logErr("Primary and backup flag could not be set at same time\n");
                     usage(argv[0]);
                     return false;
                 }
@@ -120,6 +126,22 @@ extern bool gpt_main(int argc, char* argv[])
             break;
         case 'r':
             repair = true;
+            break;
+        case 'm':
+            if(ACT_INVALID != action)
+                logWarn("Overwrite previous selected action");
+            action = ACT_MOVE;
+            break;
+        case 'a':
+        {
+            char *endptr;
+            address = strtoull(optarg, &endptr, 0);
+            if(endptr == optarg || *endptr != '\0')
+            {
+                logErr("Address must be an integer\n");
+                return false;
+            }
+        }
             break;
         case 'h':
             /*fallthrough*/
@@ -159,12 +181,16 @@ extern bool gpt_main(int argc, char* argv[])
                    selection == GPT_PRIMARY ? "Primary" : "Backup");
         break;
     case ACT_VALIDATE:
-        if( gpt_validate(&device, (uint8_t)selection,repair) )
+        if( gpt_validate(&device, (uint8_t)selection, repair) )
             logErr("%s-GPT is not valid",
                    selection == GPT_PRIMARY ? "Primary" : "Backup");
         else
             printf("%s-GPT is valid\n",
                    selection == GPT_PRIMARY ? "Primary" : "Backup");
+        break;
+    case ACT_MOVE:
+        /* TODO move */
+        (void) address;
         break;
     }
 
