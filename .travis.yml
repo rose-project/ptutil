@@ -1,0 +1,16 @@
+dist: xenial
+
+language: c
+compiler: gcc
+os: linux
+
+addons:
+  apt:
+    - cmake-data
+    - cmake
+
+
+script:
+    - mkdir build && cd build
+    - cmake ..
+    - make

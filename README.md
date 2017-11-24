@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/rose-project/ptutil.svg?branch=master)](https://travis-ci.org/rose-project/ptutil)
+
 # ptutil
 Partitiontable manipulation utility is created to do modifications to
 an already existing partition table. For embedded devices often it is
