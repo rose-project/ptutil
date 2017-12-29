@@ -57,7 +57,7 @@ void usage(const char* name)
            "                        This could lead to a broken system!\n"
            "    -r  --repair        gpt validate should try to repair an invalidated gpt table\n"
            "    -m  --move          move gpt table to it's default position or to another given by address parameter\n"
-           "	-a                  absolute address in bytes"
+           "    -a                  absolute address in bytes"
            "Partition options:\n"
            "\n"
            "Others:\n"
